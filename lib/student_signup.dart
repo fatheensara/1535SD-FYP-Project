@@ -107,6 +107,7 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
                           borderRadius: BorderRadius.circular(25),
                           // ignore: deprecated_member_use
                           border: Border.all(
+                            // ignore: deprecated_member_use
                             color: Colors.white.withOpacity(0.2),
                           ),
                           boxShadow: [
