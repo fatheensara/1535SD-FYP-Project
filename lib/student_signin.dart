@@ -1,3 +1,4 @@
+import 'dart:ui'; // Required for ImageFilter
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -14,212 +15,261 @@ class StudentSignInPage extends StatefulWidget {
 }
 
 class _StudentSignInPageState extends State<StudentSignInPage> {
-  // State for the "Remember Me" checkbox
   bool _rememberMe = false;
-
-  // State for password visibility
   bool _isPasswordObscured = true;
 
   @override
   Widget build(BuildContext context) {
-    // This checks if there is a page to pop.
-    // This is correct: after logout, there's no page, so canGoBack = false.
-    // After coming from the "Hello" page, canGoBack = true.
-    final bool canGoBack = Navigator.canPop(context);
-
     return Scaffold(
-      // We use a Stack to layer the gradient and the content
+      extendBodyBehindAppBar: true, // Allows content to flow behind AppBar
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              // ignore: deprecated_member_use
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.white,
+            ),
+          ),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              FadePageRoute(page: const WelcomeScreen()),
+              (route) => false,
+            );
+          },
+        ),
+      ),
       body: Stack(
         children: [
-          // 1. The Gradient Background (No Change)
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blue.shade700,
-                  Colors.purple.shade600,
-                  Colors.purple.shade900,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
+          // 1. DYNAMIC BACKGROUND
+          _buildBackground(),
 
-          // 2. The AppBar (Transparent) - UPDATED
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-
-              // Conditionally show the back button
-              leading: canGoBack
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        // *** YOUR REQUESTED CHANGE ***
-                        // This button now goes to the WelcomeScreen
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          FadePageRoute(page: const WelcomeScreen()),
-                          (route) => false,
-                        );
-                      },
-                    )
-                  : null, // Hidden after logout
-
-              title: Text(
-                "Student Sign In",
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 22,
-                ),
-              ),
-              centerTitle: true,
-            ),
-          ),
-
-          // 3. The Sign-In Form Content
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          // 2. GLASS CONTENT
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center, // Center the form
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Spacer(flex: 2), // Add space at the top
-                  // "SIGN IN" Title
-                  Text(
-                    "SIGN IN",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 60), // Spacing for AppBar
+                  // Icon / Logo Area
+                  Container(
+                    height: 100,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      // ignore: deprecated_member_use
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      // ignore: deprecated_member_use
+                      border: Border.all(
+                        // ignore: deprecated_member_use
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.school_rounded,
+                      size: 50,
                       color: Colors.white,
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
-                  // Matric Number Text Field
-                  TextFormField(
-                    decoration: _buildInputDecoration(
-                      hint: "Matric Number",
-                      icon: Icons.person_outline,
-                    ),
-                    keyboardType: TextInputType.text,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Password Text Field
-                  TextFormField(
-                    obscureText: _isPasswordObscured, // Hide the password
-                    decoration: _buildInputDecoration(
-                      hint: "Password",
-                      icon: Icons.lock_outline,
-                      // Add a "show/hide" password icon
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordObscured
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: Colors.white70,
+                  Text(
+                    "Welcome Student",
+                    style: GoogleFonts.poppins(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.3),
+                          offset: const Offset(0, 4),
+                          blurRadius: 10,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordObscured = !_isPasswordObscured;
-                          });
-                        },
-                      ),
+                      ],
                     ),
-                    style: const TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    "Sign in to access your classes",
+                    style: GoogleFonts.lato(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 40),
 
-                  // "Remember Me" and "Forgot Password" Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Remember Me Checkbox
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _rememberMe = !_rememberMe;
-                          });
-                        },
-                        child: Row(
-                          children: [
-                            Checkbox(
-                              value: _rememberMe,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  _rememberMe = value ?? false;
-                                });
-                              },
-                              checkColor:
-                                  Colors.purple.shade900, // Color of the check
-                              activeColor: Colors.white, // Color of the box
-                              side: const BorderSide(color: Colors.white),
+                  // THE GLASS CARD FORM
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                      child: Container(
+                        padding: const EdgeInsets.all(30),
+                        decoration: BoxDecoration(
+                          // ignore: deprecated_member_use
+                          color: Colors.white.withOpacity(
+                            0.1,
+                          ), // Frosted glass tint
+                          borderRadius: BorderRadius.circular(25),
+                          // ignore: deprecated_member_use
+                          border: Border.all(
+                            // ignore: deprecated_member_use
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              // ignore: deprecated_member_use
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              spreadRadius: 5,
                             ),
-                            Text(
-                              "Remember Me",
-                              style: GoogleFonts.lato(color: Colors.white),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            _buildGlassTextField(
+                              hint: "Matric Number",
+                              icon: Icons.badge_outlined,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildGlassTextField(
+                              hint: "Password",
+                              icon: Icons.lock_outline,
+                              isPassword: true,
+                            ),
+                            const SizedBox(height: 15),
+
+                            // Remember Me & Forgot Password
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                GestureDetector(
+                                  onTap: () => setState(
+                                    () => _rememberMe = !_rememberMe,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: Checkbox(
+                                          value: _rememberMe,
+                                          onChanged: (val) => setState(
+                                            () => _rememberMe = val!,
+                                          ),
+                                          activeColor: Colors.white,
+                                          checkColor: Colors.purple.shade900,
+                                          side: const BorderSide(
+                                            color: Colors.white70,
+                                            width: 1.5,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "Remember",
+                                        style: GoogleFonts.lato(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      FadePageRoute(
+                                        page: const StudentForgotPasswordPage(),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    "Forgot Password?",
+                                    style: GoogleFonts.lato(
+                                      color: Colors.blue.shade100,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 30),
+
+                            // ACTION BUTTON
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    FadePageRoute(
+                                      page: const StudentHomePage(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.purple.shade900,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                ),
+                                child: Text(
+                                  "LOG IN",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-
-                      // Forgot Password Link
-                      TextButton(
-                        onPressed: () {
-                          // Navigate using our fade transition
-                          Navigator.push(
-                            context,
-                            FadePageRoute(
-                              page: const StudentForgotPasswordPage(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          "Forgot Password?",
-                          style: GoogleFonts.lato(
-                            color: Colors.lightBlue.shade200,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // LOG IN Button
-                  ElevatedButton(
-                    onPressed: () {
-                      // Login logic remains the same
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        FadePageRoute(page: const StudentHomePage()),
-                        (route) => false,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      // ... all your existing styles ...
                     ),
-                    child: const Text("LOG IN"),
                   ),
-
-                  const Spacer(flex: 3), // Add space at the bottom
+                  const SizedBox(height: 30),
+                  Text(
+                    "International Islamic University Malaysia",
+                    style: GoogleFonts.lato(
+                      color: Colors.white30,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -229,40 +279,114 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
     );
   }
 
-  // A helper method to build the InputDecoration for the text fields
-  // This avoids code repetition and keeps the styling consistent.
-  InputDecoration _buildInputDecoration({
+  // --- WIDGET HELPERS ---
+
+  Widget _buildBackground() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.blue.shade900,
+            const Color(0xFF6A0572), // Deep Purple
+            Colors.black,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Glowing Blob 1
+          Positioned(
+            top: -100,
+            left: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // ignore: deprecated_member_use
+                color: Colors.purple.shade600.withOpacity(0.4),
+                boxShadow: [
+                  BoxShadow(
+                    // ignore: deprecated_member_use
+                    color: Colors.purple.shade600.withOpacity(0.4),
+                    blurRadius: 100,
+                    spreadRadius: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Glowing Blob 2
+          Positioned(
+            bottom: -50,
+            right: -50,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // ignore: deprecated_member_use
+                color: Colors.blue.shade600.withOpacity(0.3),
+                boxShadow: [
+                  BoxShadow(
+                    // ignore: deprecated_member_use
+                    color: Colors.blue.shade600.withOpacity(0.3),
+                    blurRadius: 100,
+                    spreadRadius: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassTextField({
     required String hint,
     required IconData icon,
-    Widget? suffixIcon,
+    bool isPassword = false,
   }) {
-    return InputDecoration(
-      hintText: hint,
-      // ignore: deprecated_member_use
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-
-      // Icon on the left
-      prefixIcon: Icon(icon, color: Colors.white),
-
-      // Show/hide icon on the right
-      suffixIcon: suffixIcon,
-
-      // Background color
-      filled: true,
-      // ignore: deprecated_member_use
-      fillColor: Colors.white.withOpacity(0.1), // Translucent white
-      // Border styles
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none, // No visible border by default
+    return Container(
+      decoration: BoxDecoration(
+        // ignore: deprecated_member_use
+        color: Colors.black.withOpacity(
+          0.2,
+        ), // Darker background for input visibility
+        borderRadius: BorderRadius.circular(15),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white, width: 2.0),
+      child: TextFormField(
+        obscureText: isPassword ? _isPasswordObscured : false,
+        style: GoogleFonts.lato(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.lato(color: Colors.white54),
+          prefixIcon: Icon(icon, color: Colors.white70, size: 22),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _isPasswordObscured
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.white54,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isPasswordObscured = !_isPasswordObscured;
+                    });
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+        ),
       ),
     );
   }
