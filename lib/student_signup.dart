@@ -2,8 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:fyp/student_signin.dart';
-import 'package:fyp/fade_page_route.dart';
+import 'student_signin.dart';
+import 'student_hello.dart'; // <--- Added this import
+import 'fade_page_route.dart';
 
 class StudentSignUpPage extends StatefulWidget {
   const StudentSignUpPage({super.key});
@@ -37,9 +38,11 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
             ),
           ),
           onPressed: () {
+            // *** CHANGE IS HERE ***
+            // Instead of going to Sign In, we go back to the Portal (Hello Page)
             Navigator.pushReplacement(
               context,
-              FadePageRoute(page: const StudentSignInPage()),
+              FadePageRoute(page: const StudentHelloPage()),
             );
           },
         ),

@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:fyp/admin_signin.dart';
+import 'package:fyp/admin_hello.dart'; // <--- Added for navigation
 import 'package:fyp/fade_page_route.dart';
 
 class AdminSignUpPage extends StatefulWidget {
@@ -17,15 +19,51 @@ class _AdminSignUpPageState extends State<AdminSignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              // ignore: deprecated_member_use
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.white,
+            ),
+          ),
+          onPressed: () {
+            // *** NAVIGATION UPDATE ***
+            Navigator.pushReplacement(
+              context,
+              FadePageRoute(page: const AdminHelloPage()),
+            );
+          },
+        ),
+        title: Text(
+          "Admin Setup",
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Stack(
         children: [
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.blue.shade700,
-                  Colors.purple.shade600,
-                  Colors.purple.shade900,
+                  Color(0xFF0F2027),
+                  Color(0xFF203A43),
+                  Color(0xFF2C5364),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -33,233 +71,147 @@ class _AdminSignUpPageState extends State<AdminSignUpPage> {
             ),
           ),
 
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                onPressed: () {
-                  // Go back to Sign In page
-                  Navigator.pushReplacement(
-                    context,
-                    FadePageRoute(page: const AdminSignInPage()),
-                  );
-                },
-              ),
-              title: Text(
-                "Admin Sign Up",
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 22,
-                ),
-              ),
-              centerTitle: true,
-            ),
-          ),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 100),
 
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.15),
-
-                    Text(
-                      "SIGN UP",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                  Text(
+                    "Register Admin",
+                    style: GoogleFonts.poppins(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-
-                    const SizedBox(height: 32),
-
-                    TextFormField(
-                      decoration: _buildInputDecoration(
-                        hint: "Full Name",
-                        icon: Icons.person_outline,
-                      ),
-                      keyboardType: TextInputType.name,
-                      style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    "Initialize new administrative user",
+                    style: GoogleFonts.lato(
+                      color: Colors.tealAccent.shade100,
+                      fontSize: 16,
                     ),
+                  ),
 
-                    const SizedBox(height: 16),
+                  const SizedBox(height: 40),
 
-                    TextFormField(
-                      decoration: _buildInputDecoration(
-                        hint: "Admin Key",
-                        icon: Icons.vpn_key_outlined,
-                      ),
-                      keyboardType: TextInputType.text,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      decoration: _buildInputDecoration(
-                        hint: "Email",
-                        icon: Icons.email_outlined,
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      obscureText: _isPasswordObscured,
-                      decoration: _buildInputDecoration(
-                        hint: "Password",
-                        icon: Icons.lock_outline,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordObscured
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: Colors.white70,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isPasswordObscured = !_isPasswordObscured;
-                            });
-                          },
-                        ),
-                      ),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    ElevatedButton(
-                      onPressed: () {
-                        // Show the success dialog
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (BuildContext dialogContext) {
-                            return Dialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20.0),
-                              ),
-                              // ignore: deprecated_member_use
-                              backgroundColor: Colors.black.withOpacity(0.85),
-                              child: Padding(
-                                padding: const EdgeInsets.all(24.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                      size: 60,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      "Your STAFF NUMBER has been sent to your email.",
-                                      textAlign: TextAlign.center,
-                                      style: GoogleFonts.lato(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey.shade800,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 50,
-                                          vertical: 12,
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        Navigator.of(dialogContext).pop();
-                                        Navigator.pushReplacement(
-                                          context,
-                                          FadePageRoute(
-                                            page: const AdminSignInPage(),
-                                          ),
-                                        );
-                                      },
-                                      child: Text(
-                                        "OK",
-                                        style: GoogleFonts.poppins(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.purple.shade900,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        textStyle: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      child: const Text("REGISTER"),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          FadePageRoute(page: const AdminSignInPage()),
-                        );
-                      },
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          text: "Already have an account? ",
-                          style: GoogleFonts.lato(
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                      child: Container(
+                        padding: const EdgeInsets.all(30),
+                        decoration: BoxDecoration(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(25),
+                          // ignore: deprecated_member_use
+                          border: Border.all(
                             // ignore: deprecated_member_use
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 16,
+                            color: Colors.tealAccent.withOpacity(0.1),
                           ),
-                          children: <TextSpan>[
-                            TextSpan(
-                              text: "Sign In",
-                              style: GoogleFonts.lato(
-                                color: Colors.lightBlue.shade200,
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
+                        ),
+                        child: Column(
+                          children: [
+                            _buildGlassTextField(
+                              hint: "Admin Name",
+                              icon: Icons.person_outline,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildGlassTextField(
+                              hint: "System Key",
+                              icon: Icons.vpn_key_outlined,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildGlassTextField(
+                              hint: "Official Email",
+                              icon: Icons.email_outlined,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildGlassTextField(
+                              hint: "Password",
+                              icon: Icons.lock_outline,
+                              isPassword: true,
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Admin Key Verified. Account Created.",
+                                      ),
+                                    ),
+                                  );
+                                  Navigator.pushReplacement(
+                                    context,
+                                    FadePageRoute(
+                                      page: const AdminSignInPage(),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.tealAccent,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                ),
+                                child: Text(
+                                  "INITIALIZE",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        FadePageRoute(page: const AdminSignInPage()),
+                      );
+                    },
+                    child: RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        text: "Have credentials? ",
+                        style: GoogleFonts.lato(
+                          // ignore: deprecated_member_use
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 16,
+                        ),
+                        children: <TextSpan>[
+                          TextSpan(
+                            text: "Access Console",
+                            style: GoogleFonts.lato(
+                              color: Colors.tealAccent,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
           ),
@@ -268,31 +220,50 @@ class _AdminSignUpPageState extends State<AdminSignUpPage> {
     );
   }
 
-  InputDecoration _buildInputDecoration({
+  Widget _buildGlassTextField({
     required String hint,
     required IconData icon,
-    Widget? suffixIcon,
+    bool isPassword = false,
   }) {
-    return InputDecoration(
-      hintText: hint,
-      // ignore: deprecated_member_use
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-      prefixIcon: Icon(icon, color: Colors.white),
-      suffixIcon: suffixIcon,
-      filled: true,
-      // ignore: deprecated_member_use
-      fillColor: Colors.white.withOpacity(0.1),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+    return Container(
+      decoration: BoxDecoration(
+        // ignore: deprecated_member_use
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(15),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white, width: 2.0),
+      child: TextFormField(
+        obscureText: isPassword ? _isPasswordObscured : false,
+        style: GoogleFonts.sourceCodePro(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.sourceCodePro(color: Colors.white38),
+          // ignore: deprecated_member_use
+          prefixIcon: Icon(
+            icon,
+            // ignore: deprecated_member_use
+            color: Colors.tealAccent.withOpacity(0.7),
+            size: 22,
+          ),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _isPasswordObscured
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.white38,
+                    size: 20,
+                  ),
+                  onPressed: () => setState(
+                    () => _isPasswordObscured = !_isPasswordObscured,
+                  ),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+        ),
       ),
     );
   }

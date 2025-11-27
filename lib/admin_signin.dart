@@ -1,10 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Import all necessary pages
-import 'admin_forgot_password_page.dart'; // <-- Create this
-import 'admin_home.dart'; // <-- Create this
-import 'welcome.dart'; // <-- Import
+import 'admin_forgot_password_page.dart';
+import 'admin_home.dart';
+import 'admin_hello.dart'; // <--- Added for navigation
 import 'fade_page_route.dart';
 
 class AdminSignInPage extends StatefulWidget {
@@ -15,173 +15,184 @@ class AdminSignInPage extends StatefulWidget {
 }
 
 class _AdminSignInPageState extends State<AdminSignInPage> {
-  bool _rememberMe = false;
   bool _isPasswordObscured = true;
 
   @override
   Widget build(BuildContext context) {
-    final bool canGoBack = Navigator.canPop(context);
-
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              // ignore: deprecated_member_use
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.white,
+            ),
+          ),
+          onPressed: () {
+            // *** NAVIGATION UPDATE ***
+            Navigator.pushReplacement(
+              context,
+              FadePageRoute(page: const AdminHelloPage()),
+            );
+          },
+        ),
+      ),
       body: Stack(
         children: [
-          // Gradient
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blue.shade700,
-                  Colors.purple.shade600,
-                  Colors.purple.shade900,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
+          // 1. ADMIN DARK THEME (Teal/Night Blue)
+          _buildBackground(),
 
-          // AppBar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: canGoBack
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        // *** YOUR REQUESTED CHANGE ***
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          FadePageRoute(page: const WelcomeScreen()),
-                          (route) => false,
-                        );
-                      },
-                    )
-                  : null,
-
-              title: Text(
-                "Admin Sign In", // <-- Changed
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 22,
-                ),
-              ),
-              centerTitle: true,
-            ),
-          ),
-
-          // Form Content
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          // 2. GLASS CONTENT
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Spacer(flex: 2),
-                  Text("SIGN IN" /* ... */),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    decoration: _buildInputDecoration(
-                      hint: "Staff Number", // <-- Changed
-                      icon: Icons.person_outline,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    obscureText: _isPasswordObscured,
-                    decoration: _buildInputDecoration(
-                      hint: "Password",
-                      icon: Icons.lock_outline,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordObscured
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: Colors.white70,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordObscured = !_isPasswordObscured;
-                          });
-                        },
+                  const SizedBox(height: 60),
+
+                  Container(
+                    height: 100,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      // ignore: deprecated_member_use
+                      color: Colors.teal.shade900.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                      // ignore: deprecated_member_use
+                      border: Border.all(
+                        // ignore: deprecated_member_use
+                        color: Colors.tealAccent.withOpacity(0.2),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.admin_panel_settings_outlined,
+                      size: 50,
+                      color: Colors.tealAccent,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // "Remember Me" Checkbox
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _rememberMe = !_rememberMe;
-                          });
-                        },
-                        child: Row(
+
+                  const SizedBox(height: 24),
+
+                  Text(
+                    "Admin Console",
+                    style: GoogleFonts.poppins(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    "Secure System Access",
+                    style: GoogleFonts.lato(
+                      fontSize: 16,
+                      color: Colors.tealAccent.shade100,
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                      child: Container(
+                        padding: const EdgeInsets.all(30),
+                        decoration: BoxDecoration(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(25),
+                          // ignore: deprecated_member_use
+                          border: Border.all(
+                            // ignore: deprecated_member_use
+                            color: Colors.tealAccent.withOpacity(0.1),
+                          ),
+                        ),
+                        child: Column(
                           children: [
-                            Checkbox(
-                              value: _rememberMe,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  _rememberMe = value ?? false;
-                                });
-                              },
-                              checkColor: Colors.purple.shade900,
-                              activeColor: Colors.white,
-                              side: const BorderSide(color: Colors.white),
+                            _buildGlassTextField(
+                              hint: "Admin ID",
+                              icon: Icons.shield_outlined,
                             ),
-                            Text(
-                              "Remember Me",
-                              style: GoogleFonts.lato(color: Colors.white),
+                            const SizedBox(height: 20),
+                            _buildGlassTextField(
+                              hint: "Password",
+                              icon: Icons.lock_outline,
+                              isPassword: true,
+                            ),
+                            const SizedBox(height: 15),
+
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    FadePageRoute(
+                                      page: const AdminForgotPasswordPage(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  "Reset Credentials?",
+                                  style: GoogleFonts.lato(
+                                    color: Colors.tealAccent,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    FadePageRoute(page: const AdminHomePage()),
+                                    (route) => false,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.tealAccent,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                ),
+                                child: Text(
+                                  "AUTHENTICATE",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-
-                      // "Forgot Password" Link
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            FadePageRoute(
-                              page: const AdminForgotPasswordPage(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          "Forgot Password?",
-                          style: GoogleFonts.lato(
-                            color: Colors.lightBlue.shade200,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        FadePageRoute(
-                          page: const AdminHomePage(),
-                        ), // <-- Changed
-                        (route) => false,
-                      );
-                    },
-                    child: const Text("LOG IN"),
-                    // ... style
-                  ),
-                  const Spacer(flex: 3),
                 ],
               ),
             ),
@@ -191,33 +202,88 @@ class _AdminSignInPageState extends State<AdminSignInPage> {
     );
   }
 
-  // Helper method
-  InputDecoration _buildInputDecoration({
+  Widget _buildBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // ignore: deprecated_member_use
+                color: Colors.tealAccent.withOpacity(0.1),
+                boxShadow: [
+                  BoxShadow(
+                    // ignore: deprecated_member_use
+                    color: Colors.tealAccent.withOpacity(0.1),
+                    blurRadius: 100,
+                    spreadRadius: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassTextField({
     required String hint,
     required IconData icon,
-    Widget? suffixIcon,
+    bool isPassword = false,
   }) {
-    // ...
-    return InputDecoration(
-      hintText: hint,
-      // ignore: deprecated_member_use
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-      prefixIcon: Icon(icon, color: Colors.white),
-      suffixIcon: suffixIcon,
-      filled: true,
-      // ignore: deprecated_member_use
-      fillColor: Colors.white.withOpacity(0.1),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+    return Container(
+      decoration: BoxDecoration(
+        // ignore: deprecated_member_use
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(15),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white, width: 2.0),
+      child: TextFormField(
+        obscureText: isPassword ? _isPasswordObscured : false,
+        style: GoogleFonts.sourceCodePro(
+          color: Colors.white,
+        ), // Mono font for admin
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.sourceCodePro(color: Colors.white38),
+          prefixIcon: Icon(
+            icon,
+            // ignore: deprecated_member_use
+            color: Colors.tealAccent.withOpacity(0.7),
+            size: 22,
+          ),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _isPasswordObscured
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.white38,
+                    size: 20,
+                  ),
+                  onPressed: () => setState(
+                    () => _isPasswordObscured = !_isPasswordObscured,
+                  ),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+        ),
       ),
     );
   }

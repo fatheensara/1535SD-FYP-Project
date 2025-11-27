@@ -1,12 +1,11 @@
+import 'dart:ui'; // Required for blur
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Import the new pages you want to navigate to
+// Import pages
 import 'student_signin.dart';
 import 'student_signup.dart';
-
-// Import your new custom fade transition
-import 'fade_page_route.dart'; // <-- Add this import
+import 'fade_page_route.dart';
 
 class StudentHelloPage extends StatelessWidget {
   const StudentHelloPage({super.key});
@@ -14,132 +13,277 @@ class StudentHelloPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          "STUDENT",
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 22,
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              // ignore: deprecated_member_use
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.white,
+            ),
           ),
+          onPressed: () => Navigator.pop(context),
         ),
-        centerTitle: true,
       ),
-      extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.blue.shade700,
-              Colors.purple.shade600,
-              Colors.purple.shade900,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      body: Stack(
+        children: [
+          // 1. BACKGROUND
+          _buildBackground(context),
+
+          // 2. CONTENT
+          SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Spacer(flex: 2),
+                const Spacer(flex: 1),
 
-                Text(
-                  "Hello! Welcome back to",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.lato(
-                    fontSize: 24,
-                    // ignore: deprecated_member_use
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
+                // --- HERO SECTION ---
+                _buildHeroIcon(),
+                const SizedBox(height: 40),
 
+                // Title Text
                 Text(
-                  "AttenDID!",
-                  textAlign: TextAlign.center,
+                  "Student Portal",
                   style: GoogleFonts.poppins(
-                    fontSize: 48,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        // ignore: deprecated_member_use
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  "Manage attendance & track classes",
+                  style: GoogleFonts.lato(
+                    fontSize: 16,
+                    color: Colors.white70,
+                    letterSpacing: 0.5,
                   ),
                 ),
 
-                const Spacer(flex: 3),
+                const Spacer(flex: 2),
 
-                // SIGN IN Button
+                // --- BOTTOM GLASS CARD ---
+                _buildBottomGlassCard(context),
+
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- WIDGET HELPERS ---
+
+  Widget _buildBackground(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF2E3192), // Deep Blue
+            Colors.purple.shade900, // Purple accent
+            Colors.purple.shade900,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Background Overlay to darken it slightly
+          // ignore: deprecated_member_use
+          Container(color: Colors.black.withOpacity(0.3)),
+
+          // Blob 1 (Top Left)
+          Positioned(
+            top: -100,
+            left: -50,
+            child: _buildBlob(Colors.blueAccent, 300),
+          ),
+          // Blob 2 (Center Right)
+          Positioned(
+            top: MediaQuery.of(context).size.height * 0.3,
+            right: -100,
+            child: _buildBlob(Colors.purpleAccent, 250),
+          ),
+          // Blob 3 (Bottom Left)
+          Positioned(
+            bottom: -50,
+            left: -50,
+            child: _buildBlob(Colors.cyanAccent, 200),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlob(Color color, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        // ignore: deprecated_member_use
+        color: color.withOpacity(0.4),
+        boxShadow: [
+          BoxShadow(
+            // ignore: deprecated_member_use
+            color: color.withOpacity(0.4),
+            blurRadius: 80,
+            spreadRadius: 20,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroIcon() {
+    return Container(
+      width: 140,
+      height: 140,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            // ignore: deprecated_member_use
+            Colors.white.withOpacity(0.4),
+            // ignore: deprecated_member_use
+            Colors.white.withOpacity(0.1),
+          ],
+        ),
+        border: Border.all(
+          // ignore: deprecated_member_use
+          color: Colors.white.withOpacity(0.2),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            // ignore: deprecated_member_use
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 30,
+            spreadRadius: 5,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(25),
+          decoration: BoxDecoration(
+            // ignore: deprecated_member_use
+            color: Colors.white.withOpacity(0.15),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.school_rounded,
+            size: 60,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomGlassCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              // ignore: deprecated_member_use
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(30),
+              // ignore: deprecated_member_use
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  // ignore: deprecated_member_use
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // SIGN IN BUTTON
                 ElevatedButton(
                   onPressed: () {
-                    // *** UPDATED NAVIGATION ***
-                    // Use the custom FadePageRoute
                     Navigator.push(
                       context,
-                      FadePageRoute(
-                        page: const StudentSignInPage(),
-                      ), // <-- Changed
+                      FadePageRoute(page: const StudentSignInPage()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: Colors.purple.shade900,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    foregroundColor: const Color(0xFF2E3192), // Deep Blue Text
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    textStyle: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    elevation: 5,
                   ),
-                  child: const Text("SIGN IN"),
+                  child: Text(
+                    "Login to Portal",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // "Don't have an account yet? Sign Up"
-                GestureDetector(
-                  onTap: () {
-                    // *** UPDATED NAVIGATION ***
-                    // Use the custom FadePageRoute here too
+                // SIGN UP BUTTON (Outlined Style)
+                OutlinedButton(
+                  onPressed: () {
                     Navigator.push(
                       context,
-                      FadePageRoute(
-                        page: const StudentSignUpPage(),
-                      ), // <-- Changed
+                      FadePageRoute(page: const StudentSignUpPage()),
                     );
                   },
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      text: "Don't have an account yet? ",
-                      style: GoogleFonts.lato(
-                        // ignore: deprecated_member_use
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 16,
-                      ),
-                      children: <TextSpan>[
-                        TextSpan(
-                          text: "Sign Up",
-                          style: GoogleFonts.lato(
-                            color: Colors.lightBlue.shade200,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ],
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    "Create Account",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-
-                const Spacer(flex: 2),
               ],
             ),
           ),

@@ -1,12 +1,15 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 // --- IMPORTS ---
-import 'welcome.dart';
+import 'welcome.dart'; // Required for Logout
 import 'fade_page_route.dart';
 import 'staff_attendance_monitor_page.dart';
-import 'staff_schedule_page.dart'; // <--- IMPORT THE NEW PAGE HERE
+import 'staff_schedule_page.dart';
+import 'staff_reports_page.dart';
+import 'staff_profile_page.dart';
 
 class StaffHomePage extends StatefulWidget {
   const StaffHomePage({super.key});
@@ -16,32 +19,46 @@ class StaffHomePage extends StatefulWidget {
 }
 
 class _StaffHomePageState extends State<StaffHomePage> {
-  int _currentIndex = 0; // 0=Home, 1=Schedule, 2=Reports, 3=Profile
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F5),
-      extendBody: true, // Allows content to flow behind the floating nav bar
+      extendBody: true,
       body: Stack(
         children: [
-          // MAIN CONTENT SWITCHER
+          // 1. GLOBAL DARK BACKGROUND
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F0C29), // Onyx
+                  Color(0xFF302B63), // Deep Purple
+                  Color(0xFF24243E), // Dark Slate
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+
+          // 2. MAIN CONTENT SWITCHER
           IndexedStack(
             index: _currentIndex,
             children: [
-              _buildDashboardView(), // Index 0: Dashboard
-              const StaffSchedulePage(), // Index 1: ACTUAL SCHEDULE PAGE
-              _buildPlaceholder("Reports"), // Index 2: Placeholder
-              _buildPlaceholder("Profile"), // Index 3: Placeholder
+              _buildDashboardView(),
+              const StaffSchedulePage(),
+              const StaffReportsPage(),
+              const StaffProfilePage(),
             ],
           ),
 
-          // FLOATING NAV BAR
+          // 3. FLOATING NAV BAR
           Positioned(
             bottom: 20,
             left: 20,
             right: 20,
-            child: _buildFloatingNavBar(),
+            child: _buildGlassNavBar(),
           ),
         ],
       ),
@@ -50,276 +67,364 @@ class _StaffHomePageState extends State<StaffHomePage> {
     );
   }
 
-  // --- VIEW 0: LECTURER DASHBOARD ---
+  // --- DASHBOARD VIEW (Index 0) ---
   Widget _buildDashboardView() {
     String dateStr = DateFormat('EEEE, d MMMM').format(DateTime.now());
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 120),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // HEADER
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Good Morning,",
+                        style: GoogleFonts.lato(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        "Dr. Takumi",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // *** LOGOUT BUTTON (Updated) ***
+                  Container(
+                    decoration: BoxDecoration(
+                      // ignore: deprecated_member_use
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        // Navigate back to Welcome Screen
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          FadePageRoute(page: const WelcomeScreen()),
+                          (route) => false,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // DATE & STATS
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                dateStr,
+                style: GoogleFonts.lato(
+                  color: Colors.cyanAccent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // QUICK STATS ROW
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  _buildStatCard(
+                    "Total Classes",
+                    "3",
+                    Icons.class_outlined,
+                    Colors.blue,
+                  ),
+                  const SizedBox(width: 12),
+                  _buildStatCard(
+                    "Avg Attendance",
+                    "92%",
+                    Icons.pie_chart_outline,
+                    Colors.purple,
+                  ),
+                  const SizedBox(width: 12),
+                  _buildStatCard(
+                    "Pending Reports",
+                    "1",
+                    Icons.assignment_outlined,
+                    Colors.orange,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // HAPPENING NOW
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                "Happening Now",
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            _buildActiveSessionCard(),
+
+            const SizedBox(height: 30),
+
+            // UPCOMING
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                "Up Next",
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            _buildClassTile(
+              "02:00 PM",
+              "03:30 PM",
+              "CSCI 4300 - Computation",
+              "Lab 3",
+              "Upcoming",
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- WIDGET HELPER METHODS ---
+
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        // ignore: deprecated_member_use
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. HEADER SECTION
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 60, 24, 30),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade900, Colors.purple.shade900],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
+              // ignore: deprecated_member_use
+              color: color.withOpacity(0.2),
+              shape: BoxShape.circle,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Good Morning,",
-                          style: GoogleFonts.lato(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          "Dr. Takumi",
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        // ignore: deprecated_member_use
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 25),
-                Text(
-                  dateStr,
-                  style: GoogleFonts.lato(
-                    color: Colors.blue.shade100,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  "You have 3 classes today",
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
-                ),
-              ],
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
-
-          const SizedBox(height: 25),
-
-          // 2. HAPPENING NOW CARD
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              "Happening Now",
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          const SizedBox(height: 15),
-          _buildActiveSessionCard(),
-
-          const SizedBox(height: 30),
-
-          // 3. UPCOMING SCHEDULE
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              "Today's Schedule",
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          const SizedBox(height: 15),
-          ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildClassTile(
-                "10:00 AM",
-                "11:20 AM",
-                "CSCI 4333 - Cryptography",
-                "Lecture Hall 1",
-                "Live Now",
-              ),
-              _buildClassTile(
-                "02:00 PM",
-                "03:30 PM",
-                "CSCI 4300 - Computation",
-                "Lab 3",
-                "Upcoming",
-              ),
-            ],
+          Text(
+            title,
+            style: GoogleFonts.lato(fontSize: 12, color: Colors.white54),
           ),
         ],
       ),
     );
   }
 
-  // --- WIDGETS ---
-
   Widget _buildActiveSessionCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: [
+            // ignore: deprecated_member_use
+            Colors.deepPurple.shade900.withOpacity(0.8),
+            // ignore: deprecated_member_use
+            Colors.purple.shade900.withOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        // ignore: deprecated_member_use
+        border: Border.all(color: Colors.purpleAccent.withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.purple.shade900.withOpacity(0.1),
+            color: Colors.purpleAccent.withOpacity(0.1),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            spreadRadius: 2,
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Top Part (Info)
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Container(
-                  height: 60,
-                  width: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.purple.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "NOW",
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple.shade700,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "CSCI 4333 - Cryptography",
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    // Live Indicator
+                    Container(
+                      height: 50,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        // ignore: deprecated_member_use
+                        color: Colors.greenAccent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          // ignore: deprecated_member_use
+                          color: Colors.greenAccent.withOpacity(0.5),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
+                      child: const Center(
+                        child: Icon(Icons.sensors, color: Colors.greenAccent),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.location_on, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
                           Text(
-                            "Lecture Hall 1",
-                            style: GoogleFonts.lato(
-                              color: Colors.grey,
-                              fontSize: 12,
+                            "CSCI 4333 - Cryptography",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
                             ),
                           ),
-                          const SizedBox(width: 15),
-                          Icon(Icons.people, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            "Live Session",
-                            style: GoogleFonts.lato(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                size: 14,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "Lecture Hall 1",
+                                style: GoogleFonts.lato(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 15),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  "LIVE",
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Action Button
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    FadePageRoute(
+                      page: const StaffAttendanceMonitorPage(
+                        className: "CSCI 4333 - Cryptography",
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    // ignore: deprecated_member_use
+                    color: Colors.white.withOpacity(0.1),
+                    // ignore: deprecated_member_use
+                    border: Border(
+                      // ignore: deprecated_member_use
+                      top: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Enter Attendance Mode",
+                        style: GoogleFonts.poppins(
+                          color: Colors.purpleAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: Colors.purpleAccent,
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          Divider(height: 1, color: Colors.grey.shade100),
-
-          // ACTION BUTTON: NAVIGATES TO MONITOR PAGE
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                FadePageRoute(
-                  page: const StaffAttendanceMonitorPage(
-                    className: "CSCI 4333 - Cryptography",
-                  ),
-                ),
-              );
-            },
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(24),
-              bottomRight: Radius.circular(24),
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              decoration: BoxDecoration(
-                // ignore: deprecated_member_use
-                color: Colors.purple.shade50.withOpacity(0.5),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.wifi_tethering, color: Colors.purple),
-                  const SizedBox(width: 10),
-                  Text(
-                    "Activate Attendance Mode",
-                    style: GoogleFonts.poppins(
-                      color: Colors.purple,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -331,14 +436,14 @@ class _StaffHomePageState extends State<StaffHomePage> {
     String loc,
     String status,
   ) {
-    bool isLive = status == "Live Now";
     return Container(
-      margin: const EdgeInsets.only(bottom: 15),
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // ignore: deprecated_member_use
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: Colors.white12),
       ),
       child: Row(
         children: [
@@ -348,19 +453,20 @@ class _StaffHomePageState extends State<StaffHomePage> {
                 start,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                   fontSize: 12,
                 ),
               ),
               Text(
                 end,
-                style: GoogleFonts.lato(color: Colors.grey, fontSize: 10),
+                style: GoogleFonts.lato(color: Colors.white38, fontSize: 10),
               ),
             ],
           ),
           Container(
             height: 30,
             width: 1,
-            color: Colors.grey.shade300,
+            color: Colors.white24,
             margin: const EdgeInsets.symmetric(horizontal: 15),
           ),
           Expanded(
@@ -371,13 +477,14 @@ class _StaffHomePageState extends State<StaffHomePage> {
                   title,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
+                    color: Colors.white,
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   loc,
-                  style: GoogleFonts.lato(color: Colors.grey, fontSize: 12),
+                  style: GoogleFonts.lato(color: Colors.white54, fontSize: 12),
                 ),
               ],
             ),
@@ -385,15 +492,18 @@ class _StaffHomePageState extends State<StaffHomePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: isLive ? Colors.green.shade50 : Colors.orange.shade50,
+              // ignore: deprecated_member_use
+              color: Colors.amber.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
+              // ignore: deprecated_member_use
+              border: Border.all(color: Colors.amber.withOpacity(0.5)),
             ),
             child: Text(
-              status,
+              "NEXT",
               style: GoogleFonts.poppins(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: isLive ? Colors.green : Colors.orange,
+                color: Colors.amber,
               ),
             ),
           ),
@@ -402,61 +512,30 @@ class _StaffHomePageState extends State<StaffHomePage> {
     );
   }
 
-  Widget _buildPlaceholder(String title) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.construction, size: 60, color: Colors.grey.shade300),
-          const SizedBox(height: 20),
-          Text(
-            "$title Page",
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                FadePageRoute(page: const WelcomeScreen()),
-                (route) => false,
-              );
-            },
-            child: const Text("Temporary Logout"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloatingNavBar() {
-    return Container(
-      height: 70,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
+  Widget _buildGlassNavBar() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(25),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 70,
+          decoration: BoxDecoration(
             // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: Colors.white10),
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.dashboard_rounded, 0, "Home"),
-          _buildNavItem(Icons.calendar_month_rounded, 1, "Schedule"),
-          const SizedBox(width: 50), // Gap for FAB
-          _buildNavItem(Icons.analytics_rounded, 2, "Reports"),
-          _buildNavItem(Icons.person_rounded, 3, "Profile"),
-        ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.dashboard_rounded, 0, "Home"),
+              _buildNavItem(Icons.calendar_month_rounded, 1, "Schedule"),
+              const SizedBox(width: 50),
+              _buildNavItem(Icons.analytics_rounded, 2, "Reports"),
+              _buildNavItem(Icons.person_rounded, 3, "Profile"),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -470,16 +549,19 @@ class _StaffHomePageState extends State<StaffHomePage> {
         children: [
           Icon(
             icon,
-            color: isSelected ? Colors.purple.shade900 : Colors.grey.shade400,
-            size: 26,
+            color: isSelected ? Colors.purpleAccent : Colors.grey,
+            size: 24,
           ),
           if (isSelected)
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: Colors.purple.shade900,
-                fontWeight: FontWeight.bold,
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  color: Colors.purpleAccent,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
         ],
@@ -493,32 +575,28 @@ class _StaffHomePageState extends State<StaffHomePage> {
       height: 65,
       width: 65,
       child: FloatingActionButton(
-        onPressed: () {
-          // Action: Quick Create Class
-        },
+        onPressed: () {},
         backgroundColor: Colors.transparent,
         elevation: 0,
         shape: const CircleBorder(),
         child: Container(
-          width: 65,
-          height: 65,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [Colors.purple.shade800, Colors.blue.shade800],
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE100FF), Color(0xFF8E2DE2)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
                 // ignore: deprecated_member_use
-                color: Colors.purple.withOpacity(0.4),
+                color: const Color(0xFFE100FF).withOpacity(0.4),
                 blurRadius: 15,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: const Icon(Icons.add, size: 32, color: Colors.white),
+          child: const Icon(Icons.add, size: 30, color: Colors.white),
         ),
       ),
     );

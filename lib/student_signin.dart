@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'student_forgot_password_page.dart';
 import 'student_home_page.dart';
+import 'student_hello.dart'; // <--- Added import for Student Hello Page
 import 'fade_page_route.dart';
-import 'welcome.dart';
 
 class StudentSignInPage extends StatefulWidget {
   const StudentSignInPage({super.key});
@@ -21,7 +21,7 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, // Allows content to flow behind AppBar
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -40,10 +40,11 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
             ),
           ),
           onPressed: () {
-            Navigator.pushAndRemoveUntil(
+            // *** CHANGE IS HERE ***
+            // Navigate back to Student Portal (Hello Page)
+            Navigator.pushReplacement(
               context,
-              FadePageRoute(page: const WelcomeScreen()),
-              (route) => false,
+              FadePageRoute(page: const StudentHelloPage()),
             );
           },
         ),
