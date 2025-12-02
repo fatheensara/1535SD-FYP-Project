@@ -2,9 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// --- IMPORTS ---
 import 'staff_forgot_password_page.dart';
-import 'staff_home.dart'; // Ensure this matches your home page file name
-import 'staff_hello.dart'; // <--- Added for navigation
+import 'staff_home.dart';
+import 'staff_hello.dart';
 import 'fade_page_route.dart';
 
 class StaffSignInPage extends StatefulWidget {
@@ -40,7 +41,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
             ),
           ),
           onPressed: () {
-            // *** NAVIGATION UPDATE ***
+            /// FIXED BACK BUTTON NAVIGATION
             Navigator.pushReplacement(
               context,
               FadePageRoute(page: const StaffHelloPage()),
@@ -50,10 +51,8 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
       ),
       body: Stack(
         children: [
-          // 1. DARK BACKGROUND
           _buildBackground(),
 
-          // 2. GLASS CONTENT
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -62,7 +61,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                 children: [
                   const SizedBox(height: 60),
 
-                  // Icon
+                  // FLOATING LOGO ICON
                   Container(
                     height: 100,
                     width: 100,
@@ -111,7 +110,6 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
 
                   const SizedBox(height: 40),
 
-                  // GLASS FORM
                   ClipRRect(
                     borderRadius: BorderRadius.circular(25),
                     child: BackdropFilter(
@@ -122,17 +120,24 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                           // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.4),
                           borderRadius: BorderRadius.circular(25),
-                          // ignore: deprecated_member_use
                           border: Border.all(
                             // ignore: deprecated_member_use
                             color: Colors.white.withOpacity(0.1),
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              // ignore: deprecated_member_use
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                            ),
+                          ],
                         ),
                         child: Column(
                           children: [
                             _buildGlassTextField(
-                              hint: "Staff ID",
-                              icon: Icons.perm_identity,
+                              hint: "Staff Email",
+                              icon: Icons.email_outlined,
                             ),
                             const SizedBox(height: 20),
                             _buildGlassTextField(
@@ -165,11 +170,6 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                                             color: Colors.white54,
                                             width: 1.5,
                                           ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -183,6 +183,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                                     ],
                                   ),
                                 ),
+
                                 GestureDetector(
                                   onTap: () {
                                     Navigator.push(
@@ -205,15 +206,16 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                             ),
                             const SizedBox(height: 30),
 
+                            // SIGN IN BUTTON
                             SizedBox(
                               width: double.infinity,
                               height: 55,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  Navigator.pushAndRemoveUntil(
+                                  /// FIXED SIGN-IN NAVIGATION
+                                  Navigator.pushReplacement(
                                     context,
                                     FadePageRoute(page: const StaffHomePage()),
-                                    (route) => false,
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -224,7 +226,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                                   ),
                                 ),
                                 child: Text(
-                                  "LOG IN",
+                                  "SIGN IN",
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -237,7 +239,9 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 30),
+
                   Text(
                     "International Islamic University Malaysia",
                     style: GoogleFonts.lato(
@@ -255,6 +259,10 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
     );
   }
 
+  // --------------------------
+  // WIDGET HELPERS
+  // --------------------------
+
   Widget _buildBackground() {
     return Container(
       decoration: const BoxDecoration(
@@ -269,25 +277,34 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
           Positioned(
             top: -100,
             left: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                // ignore: deprecated_member_use
-                color: Colors.deepPurple.shade900.withOpacity(0.5),
-                boxShadow: [
-                  BoxShadow(
-                    // ignore: deprecated_member_use
-                    color: Colors.deepPurple.shade900.withOpacity(0.5),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
+            child: _buildCircleBlob(
+              size: 300,
+              // ignore: deprecated_member_use
+              color: Colors.deepPurple.shade900.withOpacity(0.5),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            right: -50,
+            child: _buildCircleBlob(
+              size: 250,
+              // ignore: deprecated_member_use
+              color: Colors.blueAccent.withOpacity(0.2),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCircleBlob({required double size, required Color color}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [BoxShadow(color: color, blurRadius: 100, spreadRadius: 20)],
       ),
     );
   }

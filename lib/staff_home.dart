@@ -24,7 +24,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
+      extendBody: true, // Allows content to flow behind the floating nav bar
       body: Stack(
         children: [
           // 1. GLOBAL DARK BACKGROUND
@@ -46,10 +46,10 @@ class _StaffHomePageState extends State<StaffHomePage> {
           IndexedStack(
             index: _currentIndex,
             children: [
-              _buildDashboardView(),
-              const StaffSchedulePage(),
-              const StaffReportsPage(),
-              const StaffProfilePage(),
+              _buildDashboardView(), // Index 0: Home Dashboard
+              const StaffSchedulePage(), // Index 1: Schedule
+              const StaffReportsPage(), // Index 2: Reports
+              const StaffProfilePage(), // Index 3: Profile
             ],
           ),
 
@@ -62,6 +62,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
           ),
         ],
       ),
+      // FAB docked in the middle
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: _buildCenterFab(),
     );
@@ -77,7 +78,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // HEADER
+            // HEADER & LOGOUT
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
@@ -104,7 +105,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                     ],
                   ),
 
-                  // *** LOGOUT BUTTON (Updated) ***
+                  // Logout Button
                   Container(
                     decoration: BoxDecoration(
                       // ignore: deprecated_member_use
@@ -115,10 +116,10 @@ class _StaffHomePageState extends State<StaffHomePage> {
                     child: IconButton(
                       icon: const Icon(
                         Icons.logout_rounded,
-                        color: Colors.white,
+                        color: Colors.redAccent,
                       ),
+                      tooltip: "Logout",
                       onPressed: () {
-                        // Navigate back to Welcome Screen
                         Navigator.pushAndRemoveUntil(
                           context,
                           FadePageRoute(page: const WelcomeScreen()),
@@ -131,54 +132,23 @@ class _StaffHomePageState extends State<StaffHomePage> {
               ),
             ),
 
-            // DATE & STATS
+            // DATE
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                dateStr,
+                dateStr.toUpperCase(),
                 style: GoogleFonts.lato(
                   color: Colors.cyanAccent,
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+                  letterSpacing: 1.5,
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // QUICK STATS ROW
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  _buildStatCard(
-                    "Total Classes",
-                    "3",
-                    Icons.class_outlined,
-                    Colors.blue,
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    "Avg Attendance",
-                    "92%",
-                    Icons.pie_chart_outline,
-                    Colors.purple,
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    "Pending Reports",
-                    "1",
-                    Icons.assignment_outlined,
-                    Colors.orange,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // HAPPENING NOW
+            // ACTIVE SESSION CARD (Hero Element)
+            // Placed at the top for instant access (No "leceh")
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
@@ -195,7 +165,63 @@ class _StaffHomePageState extends State<StaffHomePage> {
 
             const SizedBox(height: 30),
 
-            // UPCOMING
+            // QUICK ACTIONS (New Feature for Efficiency)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildQuickAction(
+                    Icons.add_circle_outline,
+                    "New Class",
+                    Colors.blue,
+                  ),
+                  _buildQuickAction(
+                    Icons.edit_note,
+                    "Manual Entry",
+                    Colors.orange,
+                  ),
+                  _buildQuickAction(Icons.history, "History", Colors.purple),
+                  _buildQuickAction(Icons.download, "Export", Colors.green),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // STATS ROW
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  _buildStatCard(
+                    "Total Classes",
+                    "3",
+                    Icons.class_outlined,
+                    Colors.blue,
+                  ),
+                  const SizedBox(width: 12),
+                  _buildStatCard(
+                    "Attendance",
+                    "92%",
+                    Icons.pie_chart_outline,
+                    Colors.purple,
+                  ),
+                  const SizedBox(width: 12),
+                  _buildStatCard(
+                    "Pending",
+                    "5",
+                    Icons.assignment_late_outlined,
+                    Colors.redAccent,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // UPCOMING CLASS
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
@@ -223,6 +249,33 @@ class _StaffHomePageState extends State<StaffHomePage> {
 
   // --- WIDGET HELPER METHODS ---
 
+  Widget _buildQuickAction(IconData icon, String label, Color color) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            // ignore: deprecated_member_use
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(16),
+            // ignore: deprecated_member_use
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Icon(icon, color: color, size: 26),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: GoogleFonts.lato(
+            color: Colors.white70,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildStatCard(
     String title,
     String value,
@@ -241,20 +294,27 @@ class _StaffHomePageState extends State<StaffHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              // ignore: deprecated_member_use
-              color: color.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  // ignore: deprecated_member_use
+                  color: color.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              // Arrow Icon indicating clickability
+              Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white30),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -288,7 +348,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.purpleAccent.withOpacity(0.1),
+            color: Colors.purpleAccent.withOpacity(0.15),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -304,7 +364,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                 padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
-                    // Live Indicator
+                    // Animated Live Indicator
                     Container(
                       height: 50,
                       width: 50,
@@ -350,7 +410,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                                   fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(width: 15),
+                              const SizedBox(width: 10),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -378,7 +438,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                 ),
               ),
 
-              // Action Button
+              // Big Action Button
               InkWell(
                 onTap: () {
                   Navigator.push(
@@ -406,16 +466,17 @@ class _StaffHomePageState extends State<StaffHomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Enter Attendance Mode",
+                        "Start Taking Attendance",
                         style: GoogleFonts.poppins(
                           color: Colors.purpleAccent,
                           fontWeight: FontWeight.bold,
+                          fontSize: 15,
                         ),
                       ),
                       const SizedBox(width: 8),
                       const Icon(
-                        Icons.arrow_forward,
-                        size: 16,
+                        Icons.arrow_forward_rounded,
+                        size: 18,
                         color: Colors.purpleAccent,
                       ),
                     ],
@@ -521,7 +582,9 @@ class _StaffHomePageState extends State<StaffHomePage> {
           height: 70,
           decoration: BoxDecoration(
             // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withOpacity(
+              0.6,
+            ), // Slightly darker for legibility
             borderRadius: BorderRadius.circular(25),
             border: Border.all(color: Colors.white10),
           ),

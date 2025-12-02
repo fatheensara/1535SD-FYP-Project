@@ -35,7 +35,7 @@ class StaffHelloPage extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // 1. DYNAMIC BACKGROUND (Dark Mode)
+          // 1. DYNAMIC BACKGROUND
           _buildBackground(context),
 
           // 2. CONTENT
@@ -44,7 +44,7 @@ class StaffHelloPage extends StatelessWidget {
               children: [
                 const Spacer(flex: 1),
 
-                // HERO SECTION
+                // HERO ICON
                 _buildHeroIcon(),
                 const SizedBox(height: 40),
 
@@ -69,14 +69,14 @@ class StaffHelloPage extends StatelessWidget {
                   "Manage classes & monitor attendance",
                   style: GoogleFonts.lato(
                     fontSize: 16,
-                    color: Colors.grey.shade400, // Lighter grey for dark bg
+                    color: Colors.grey.shade400,
                     letterSpacing: 0.5,
                   ),
                 ),
 
                 const Spacer(flex: 2),
 
-                // BOTTOM GLASS CARD (Dark Glass)
+                // BOTTOM GLASS CARD
                 _buildBottomGlassCard(context),
 
                 const SizedBox(height: 30),
@@ -107,23 +107,23 @@ class StaffHelloPage extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Overlay to smooth gradients
+          // Overlay
           // ignore: deprecated_member_use
           Container(color: Colors.black.withOpacity(0.2)),
 
-          // Blob 1 (Subtle Purple)
+          // Blob 1
           Positioned(
             top: -100,
             left: -50,
             child: _buildBlob(Colors.deepPurple.shade900, 300),
           ),
-          // Blob 2 (Dark Indigo)
+          // Blob 2
           Positioned(
             top: MediaQuery.of(context).size.height * 0.3,
             right: -100,
             child: _buildBlob(Colors.indigo.shade900, 250),
           ),
-          // Blob 3 (Dark Slate)
+          // Blob 3
           Positioned(
             bottom: -50,
             left: -50,
@@ -147,7 +147,7 @@ class StaffHelloPage extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         // ignore: deprecated_member_use
-        color: color.withOpacity(0.6), // Higher opacity for dark colors
+        color: color.withOpacity(0.6),
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
@@ -199,11 +199,7 @@ class StaffHelloPage extends StatelessWidget {
             color: Colors.deepPurple.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
-          child: const Icon(
-            Icons.badge_rounded, // Staff Badge Icon
-            size: 60,
-            color: Colors.white,
-          ),
+          child: const Icon(Icons.badge_rounded, size: 60, color: Colors.white),
         ),
       ),
     );
@@ -220,7 +216,7 @@ class StaffHelloPage extends StatelessWidget {
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               // ignore: deprecated_member_use
-              color: Colors.black.withOpacity(0.4), // Dark Glass
+              color: Colors.black.withOpacity(0.4),
               borderRadius: BorderRadius.circular(30),
               // ignore: deprecated_member_use
               border: Border.all(color: Colors.white.withOpacity(0.1)),
@@ -247,7 +243,7 @@ class StaffHelloPage extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF0F0C29), // Dark Text
+                    foregroundColor: const Color(0xFF0F0C29),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
