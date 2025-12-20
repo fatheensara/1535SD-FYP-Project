@@ -1,17 +1,50 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'fade_page_route.dart';
+import 'staff_reports_pits_sect1.dart';
+import 'staff_reports_pits_sect2.dart';
+import 'staff_reports_netsec_sect1.dart';
+import 'staff_reports_def_sect2.dart'; // <--- New Import
 
 class StaffReportsPage extends StatelessWidget {
   const StaffReportsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // --- MOCK DATA FOR CLASSES ---
+    final List<Map<String, dynamic>> classList = [
+      {
+        "code": "CSCI 2303",
+        "name": "Principles of IT Security",
+        "students": 45,
+        "section": "Section 1",
+      },
+      {
+        "code": "CSCI 2303",
+        "name": "Principles of IT Security",
+        "students": 40,
+        "section": "Section 2",
+      },
+      {
+        "code": "CSCI 4336",
+        "name": "Network Security",
+        "students": 38,
+        "section": "Section 1",
+      },
+      {
+        "code": "CSCI 4332",
+        "name": "Digital Evidence Forensics",
+        "students": 42,
+        "section": "Section 2", // <--- Triggers new page
+      },
+    ];
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F8FA),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          "Analytics & Insights",
+          "My Subjects",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -20,22 +53,25 @@ class StaffReportsPage extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        automaticallyImplyLeading:
-            false, // Hide back button (handled by navbar)
+        automaticallyImplyLeading: false,
       ),
       body: Stack(
         children: [
-          // 1. DARK BACKGROUND
+          // 1. HEADER BACKGROUND
           Container(
+            height: 220,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF0F0C29),
-                  Color(0xFF302B63),
-                  Color(0xFF24243E),
+                  Color(0xFF1A0038), // Deep Midnight Purple
+                  Color(0xFF4A00E0), // Royal Purple
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
               ),
             ),
           ),
@@ -47,270 +83,176 @@ class StaffReportsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- OVERALL PERFORMANCE CARD ---
-                  _buildGlassCard(
-                    child: Row(
-                      children: [
-                        // Radial Indicator
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox(
-                              width: 80,
-                              height: 80,
-                              child: CircularProgressIndicator(
-                                value: 0.92,
-                                strokeWidth: 8,
-                                backgroundColor: Colors.white10,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Colors.cyanAccent,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              "92%",
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Overall Attendance",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                "Excellent engagement across all 3 active classes.",
-                                style: GoogleFonts.lato(
-                                  fontSize: 12,
-                                  color: Colors.white54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // --- WEEKLY TRENDS HEADER ---
                   Text(
-                    "Weekly Activity",
+                    "Subject Overview",
                     style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    "Semester 1, 2025/2026",
+                    style: GoogleFonts.poppins(
                       color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 15),
-
-                  // --- CUSTOM BAR CHART ---
-                  _buildGlassCard(
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            _buildBar("Mon", 0.7, Colors.purpleAccent),
-                            _buildBar("Tue", 0.85, Colors.pinkAccent),
-                            _buildBar("Wed", 0.6, Colors.orangeAccent),
-                            _buildBar("Thu", 0.9, Colors.cyanAccent),
-                            _buildBar("Fri", 0.5, Colors.blueAccent),
-                          ],
-                        ),
-                        const SizedBox(height: 15),
-                        // ignore: deprecated_member_use
-                        Divider(color: Colors.white.withOpacity(0.1)),
-                        const SizedBox(height: 5),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Total Students: 142",
-                              style: GoogleFonts.lato(
-                                color: Colors.white54,
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              "Avg: 85%",
-                              style: GoogleFonts.lato(
-                                color: Colors.greenAccent,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 30),
 
-                  // --- RECENT REPORTS HEADER ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Recent Reports",
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Icon(Icons.filter_list, color: Colors.white54, size: 20),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-
-                  // --- REPORTS LIST ---
-                  _buildReportTile(
-                    "CSCI 4333 - Attendance_Nov.pdf",
-                    "2 mins ago",
-                    Icons.picture_as_pdf,
-                    Colors.redAccent,
-                  ),
-                  _buildReportTile(
-                    "Semester_Summary_2024.csv",
-                    "Yesterday",
-                    Icons.table_chart,
-                    Colors.greenAccent,
-                  ),
-                  _buildReportTile(
-                    "Student_Absence_List.pdf",
-                    "Oct 28",
-                    Icons.picture_as_pdf,
-                    Colors.redAccent,
-                  ),
+                  // --- LIST OF SUBJECT CARDS ---
+                  ...classList.map((data) => _buildSubjectCard(context, data)),
                 ],
               ),
             ),
           ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80), // Push up above nav bar
-        child: FloatingActionButton.extended(
-          onPressed: () {},
-          backgroundColor: Colors.cyanAccent,
-          foregroundColor: Colors.black,
-          icon: const Icon(Icons.download),
-          label: Text(
-            "Export All",
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
     );
   }
 
-  // --- WIDGET HELPERS ---
+  // --- WIDGET HELPER ---
 
-  Widget _buildGlassCard({required Widget child}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            // ignore: deprecated_member_use
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(20),
-            // ignore: deprecated_member_use
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBar(String label, double heightPct, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 12,
-          height: 100 * heightPct,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: [
-              BoxShadow(
-                // ignore: deprecated_member_use
-                color: color.withOpacity(0.4),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: GoogleFonts.lato(color: Colors.white54, fontSize: 10),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReportTile(
-    String title,
-    String time,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildSubjectCard(BuildContext context, Map<String, dynamic> data) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        // ignore: deprecated_member_use
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(16),
-        // ignore: deprecated_member_use
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
             // ignore: deprecated_member_use
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
           ),
-          child: Icon(icon, color: color, size: 24),
-        ),
-        title: Text(
-          title,
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            // *** NAVIGATION LOGIC ***
+            if (data['code'] == "CSCI 2303" && data['section'] == "Section 1") {
+              Navigator.push(
+                context,
+                FadePageRoute(page: const StaffReportsPitsSect1Page()),
+              );
+            } else if (data['code'] == "CSCI 2303" &&
+                data['section'] == "Section 2") {
+              Navigator.push(
+                context,
+                FadePageRoute(page: const StaffReportsPitsSect2Page()),
+              );
+            } else if (data['code'] == "CSCI 4336" &&
+                data['section'] == "Section 1") {
+              Navigator.push(
+                context,
+                FadePageRoute(page: const StaffReportsNetsecSect1Page()),
+              );
+            } else if (data['code'] == "CSCI 4332" &&
+                data['section'] == "Section 2") {
+              // Navigate to Digital Evidence Forensics Page
+              Navigator.push(
+                context,
+                FadePageRoute(page: const StaffReportsDefSect2Page()),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "Opening details for ${data['code']} ${data['section']}",
+                  ),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              // ignore: deprecated_member_use
+                              color: const Color(0xFF4A00E0).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              data['code'],
+                              style: GoogleFonts.sourceCodePro(
+                                color: const Color(0xFF4A00E0),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            data['section'],
+                            style: GoogleFonts.lato(
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        data['name'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.people_alt_outlined,
+                            size: 16,
+                            color: Colors.grey.shade500,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            "${data['students']} Students Registered",
+                            style: GoogleFonts.lato(
+                              color: Colors.grey.shade600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(left: 10),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 18,
+                    color: Color(0xFF4A00E0),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        subtitle: Text(
-          time,
-          style: GoogleFonts.lato(color: Colors.white38, fontSize: 12),
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.more_vert, color: Colors.white38),
-          onPressed: () {},
         ),
       ),
     );

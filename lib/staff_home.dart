@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -24,547 +23,499 @@ class _StaffHomePageState extends State<StaffHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // Allows content to flow behind the floating nav bar
+      backgroundColor: const Color(0xFFF6F8FA),
+      resizeToAvoidBottomInset: false, // Prevents resizing when keyboard opens
       body: Stack(
         children: [
-          // 1. GLOBAL DARK BACKGROUND
+          // 1. HEADER BACKGROUND
           Container(
+            height: 250,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF0F0C29), // Onyx
-                  Color(0xFF302B63), // Deep Purple
-                  Color(0xFF24243E), // Dark Slate
+                  Color(0xFF1A0038), // Deep Midnight Purple
+                  Color(0xFF4A00E0), // Royal Purple
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
             ),
           ),
 
-          // 2. MAIN CONTENT SWITCHER
+          // 2. MAIN CONTENT
           IndexedStack(
             index: _currentIndex,
             children: [
-              _buildDashboardView(), // Index 0: Home Dashboard
-              const StaffSchedulePage(), // Index 1: Schedule
-              const StaffReportsPage(), // Index 2: Reports
-              const StaffProfilePage(), // Index 3: Profile
+              _buildLecturerDashboard(),
+              const StaffSchedulePage(),
+              const StaffReportsPage(),
+              const StaffProfilePage(),
             ],
           ),
 
-          // 3. FLOATING NAV BAR
+          // 3. FLOATING NAV BAR (Positioned at bottom)
           Positioned(
             bottom: 20,
             left: 20,
             right: 20,
-            child: _buildGlassNavBar(),
+            child: _buildWhiteNavBar(),
+          ),
+
+          // 4. FLOATING ACTION BUTTON (Manual Position to prevent moving)
+          // Placing it here in the Stack ensures SnackBars don't push it up.
+          Positioned(
+            bottom: 45, // Aligns perfectly with the Nav Bar curve
+            left: 0,
+            right: 0,
+            child: Center(child: _buildCenterFab()),
           ),
         ],
       ),
-      // FAB docked in the middle
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: _buildCenterFab(),
     );
   }
 
-  // --- DASHBOARD VIEW (Index 0) ---
-  Widget _buildDashboardView() {
+  // --- LECTURER DASHBOARD VIEW ---
+  Widget _buildLecturerDashboard() {
     String dateStr = DateFormat('EEEE, d MMMM').format(DateTime.now());
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 120),
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // HEADER & LOGOUT
-            Padding(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // HEADER CONTENT
+          SafeArea(
+            bottom: false,
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Good Morning,",
-                        style: GoogleFonts.lato(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Welcome Back,",
+                            style: GoogleFonts.lato(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            "Dr. Andi Fitriah",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        "Dr. Takumi",
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
+                      // Logout Button
+                      Container(
+                        decoration: BoxDecoration(
+                          // ignore: deprecated_member_use
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.logout_rounded,
+                            color: Colors.white,
+                          ),
+                          tooltip: "Logout",
+                          onPressed: () {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              FadePageRoute(page: const WelcomeScreen()),
+                              (route) => false,
+                            );
+                          },
                         ),
                       ),
                     ],
                   ),
-
-                  // Logout Button
-                  Container(
-                    decoration: BoxDecoration(
-                      // ignore: deprecated_member_use
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white12),
+                  const SizedBox(height: 10),
+                  Text(
+                    dateStr.toUpperCase(),
+                    style: GoogleFonts.lato(
+                      color: Colors.cyanAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
                     ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.logout_rounded,
-                        color: Colors.redAccent,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // OVERLAPPING CONTENT
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // SECTION TITLE
+                Text(
+                  "Action Required",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 15),
+
+                // ACTION CARD
+                _buildActionRequiredCard(),
+
+                const SizedBox(height: 30),
+
+                // QUICK ACCESS GRID
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildQuickAction(
+                      Icons.qr_code_scanner,
+                      "Attendance",
+                      Colors.indigo,
+                      () => Navigator.push(
+                        context,
+                        FadePageRoute(
+                          page: const StaffAttendanceMonitorPage(
+                            className: "CSCI 4333 - Cryptography",
+                          ),
+                        ),
                       ),
-                      tooltip: "Logout",
-                      onPressed: () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          FadePageRoute(page: const WelcomeScreen()),
-                          (route) => false,
-                        );
-                      },
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            // DATE
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                dateStr.toUpperCase(),
-                style: GoogleFonts.lato(
-                  color: Colors.cyanAccent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
+                    _buildQuickAction(
+                      Icons.people_alt_outlined,
+                      "Consultation",
+                      Colors.orange,
+                      () => _showSnackBar("Opening Consultation Schedule..."),
+                    ),
+                    _buildQuickAction(
+                      Icons.assessment_outlined,
+                      "Results",
+                      Colors.teal,
+                      () => _showSnackBar("Opening Exam Results..."),
+                    ),
+                    _buildQuickAction(
+                      Icons.campaign_outlined,
+                      "Broadcast",
+                      Colors.pink,
+                      () => _showSnackBar("Create New Announcement..."),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
 
-            // ACTIVE SESSION CARD (Hero Element)
-            // Placed at the top for instant access (No "leceh")
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                "Happening Now",
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                const SizedBox(height: 30),
+
+                // IMPORTANT NOTICES LIST
+                Text(
+                  "Important Notices",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 15),
-            _buildActiveSessionCard(),
-
-            const SizedBox(height: 30),
-
-            // QUICK ACTIONS (New Feature for Efficiency)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildQuickAction(
-                    Icons.add_circle_outline,
-                    "New Class",
-                    Colors.blue,
-                  ),
-                  _buildQuickAction(
-                    Icons.edit_note,
-                    "Manual Entry",
-                    Colors.orange,
-                  ),
-                  _buildQuickAction(Icons.history, "History", Colors.purple),
-                  _buildQuickAction(Icons.download, "Export", Colors.green),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // STATS ROW
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  _buildStatCard(
-                    "Total Classes",
-                    "3",
-                    Icons.class_outlined,
-                    Colors.blue,
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    "Attendance",
-                    "92%",
-                    Icons.pie_chart_outline,
-                    Colors.purple,
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    "Pending",
-                    "5",
-                    Icons.assignment_late_outlined,
-                    Colors.redAccent,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // UPCOMING CLASS
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                "Up Next",
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                const SizedBox(height: 15),
+                _buildNoticeTile(
+                  "Grade Submission Deadline",
+                  "Final grades for Sem 1 must be submitted by 15 Jan.",
+                  Colors.redAccent,
                 ),
-              ),
+                _buildNoticeTile(
+                  "System Maintenance",
+                  "LMS will be down this Saturday from 12AM - 4AM.",
+                  Colors.amber,
+                ),
+                _buildNoticeTile(
+                  "Department Meeting",
+                  "Monthly meeting scheduled for next Monday at 10 AM.",
+                  Colors.blue,
+                ),
+              ],
             ),
-            const SizedBox(height: 15),
-            _buildClassTile(
-              "02:00 PM",
-              "03:30 PM",
-              "CSCI 4300 - Computation",
-              "Lab 3",
-              "Upcoming",
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   // --- WIDGET HELPER METHODS ---
 
-  Widget _buildQuickAction(IconData icon, String label, Color color) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            // ignore: deprecated_member_use
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(16),
-            // ignore: deprecated_member_use
-            border: Border.all(color: color.withOpacity(0.3)),
-          ),
-          child: Icon(icon, color: color, size: 26),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: GoogleFonts.lato(
-            color: Colors.white70,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars(); // Clear previous
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating, // Floats above content
+        margin: const EdgeInsets.only(
+          bottom: 20,
+          left: 20,
+          right: 20,
+        ), // Custom positioning
+        duration: const Duration(seconds: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      width: 140,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        // ignore: deprecated_member_use
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  // --- NEW: PLUS BUTTON MENU ---
+  void _showQuickCreateMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  // ignore: deprecated_member_use
-                  color: color.withOpacity(0.2),
-                  shape: BoxShape.circle,
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                child: Icon(icon, color: color, size: 18),
               ),
-              // Arrow Icon indicating clickability
-              Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white30),
+              const SizedBox(height: 20),
+              Text(
+                "Quick Create",
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildMenuOption(
+                icon: Icons.add_alarm_rounded,
+                color: Colors.blue,
+                title: "Start Instant Class",
+                subtitle: "Create an ad-hoc session immediately",
+                onTap: () {
+                  Navigator.pop(context);
+                  _showSnackBar("Starting Instant Session...");
+                },
+              ),
+              _buildMenuOption(
+                icon: Icons.campaign_rounded,
+                color: Colors.orange,
+                title: "Post Announcement",
+                subtitle: "Notify students in your active classes",
+                onTap: () {
+                  Navigator.pop(context);
+                  _showSnackBar("Creating Announcement...");
+                },
+              ),
+              _buildMenuOption(
+                icon: Icons.qr_code_2_rounded,
+                color: Colors.purple,
+                title: "Scan Student ID",
+                subtitle: "Verify a student manually via QR",
+                onTap: () {
+                  Navigator.pop(context);
+                  _showSnackBar("Opening Scanner...");
+                },
+              ),
+              const SizedBox(height: 20),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuOption({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+      leading: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          // ignore: deprecated_member_use
+          color: color.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: color, size: 24),
+      ),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: GoogleFonts.lato(color: Colors.grey.shade600, fontSize: 13),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Colors.grey.shade300,
+      ),
+    );
+  }
+
+  Widget _buildQuickAction(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
               color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  // ignore: deprecated_member_use
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
+            child: Icon(icon, color: color, size: 28),
           ),
+          const SizedBox(height: 8),
           Text(
-            title,
-            style: GoogleFonts.lato(fontSize: 12, color: Colors.white54),
+            label,
+            style: GoogleFonts.lato(
+              color: Colors.grey.shade700,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActiveSessionCard() {
+  Widget _buildActionRequiredCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          colors: [
-            // ignore: deprecated_member_use
-            Colors.deepPurple.shade900.withOpacity(0.8),
-            // ignore: deprecated_member_use
-            Colors.purple.shade900.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        // ignore: deprecated_member_use
-        border: Border.all(color: Colors.purpleAccent.withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.purpleAccent.withOpacity(0.15),
-            blurRadius: 20,
-            spreadRadius: 2,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 25,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    // Animated Live Indicator
-                    Container(
-                      height: 50,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        // ignore: deprecated_member_use
-                        color: Colors.greenAccent.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          // ignore: deprecated_member_use
-                          color: Colors.greenAccent.withOpacity(0.5),
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.sensors, color: Colors.greenAccent),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "CSCI 4333 - Cryptography",
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                size: 14,
-                                color: Colors.white70,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                "Lecture Hall 1",
-                                style: GoogleFonts.lato(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  "LIVE",
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Big Action Button
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    FadePageRoute(
-                      page: const StaffAttendanceMonitorPage(
-                        className: "CSCI 4333 - Cryptography",
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  height: 50,
+                  width: 50,
                   decoration: BoxDecoration(
-                    // ignore: deprecated_member_use
-                    color: Colors.white.withOpacity(0.1),
-                    // ignore: deprecated_member_use
-                    border: Border(
-                      // ignore: deprecated_member_use
-                      top: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange.shade700,
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Start Taking Attendance",
+                        "3 Pending Approvals",
                         style: GoogleFonts.poppins(
-                          color: Colors.purpleAccent,
                           fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                          fontSize: 16,
+                          color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 18,
-                        color: Colors.purpleAccent,
+                      const SizedBox(height: 4),
+                      Text(
+                        "Students from CSCI 4332 requesting MC approval.",
+                        style: GoogleFonts.lato(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildClassTile(
-    String start,
-    String end,
-    String title,
-    String loc,
-    String status,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        // ignore: deprecated_member_use
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Row(
-        children: [
-          Column(
-            children: [
-              Text(
-                start,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                end,
-                style: GoogleFonts.lato(color: Colors.white38, fontSize: 10),
-              ),
-            ],
-          ),
-          Container(
-            height: 30,
-            width: 1,
-            color: Colors.white24,
-            margin: const EdgeInsets.symmetric(horizontal: 15),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  loc,
-                  style: GoogleFonts.lato(color: Colors.white54, fontSize: 12),
-                ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              // ignore: deprecated_member_use
-              color: Colors.amber.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-              // ignore: deprecated_member_use
-              border: Border.all(color: Colors.amber.withOpacity(0.5)),
-            ),
-            child: Text(
-              "NEXT",
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Colors.amber,
+          InkWell(
+            onTap: () {
+              _showSnackBar("Opening Approval Dashboard...");
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+                border: Border(top: BorderSide(color: Colors.grey.shade100)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Review Requests",
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF4A00E0),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 16,
+                    color: Color(0xFF4A00E0),
+                  ),
+                ],
               ),
             ),
           ),
@@ -573,32 +524,68 @@ class _StaffHomePageState extends State<StaffHomePage> {
     );
   }
 
-  Widget _buildGlassNavBar() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(25),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          height: 70,
-          decoration: BoxDecoration(
+  Widget _buildNoticeTile(String title, String subtitle, Color stripColor) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(
-              0.6,
-            ), // Slightly darker for legibility
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Colors.white10),
+            color: Colors.grey.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.dashboard_rounded, 0, "Home"),
-              _buildNavItem(Icons.calendar_month_rounded, 1, "Schedule"),
-              const SizedBox(width: 50),
-              _buildNavItem(Icons.analytics_rounded, 2, "Reports"),
-              _buildNavItem(Icons.person_rounded, 3, "Profile"),
-            ],
+        ],
+        border: Border(left: BorderSide(color: stripColor, width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.black87,
+            ),
           ),
-        ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: GoogleFonts.lato(color: Colors.grey.shade600, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWhiteNavBar() {
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            // ignore: deprecated_member_use
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(Icons.dashboard_rounded, 0, "Home"),
+          _buildNavItem(Icons.calendar_month_rounded, 1, "Schedule"),
+          const SizedBox(width: 50),
+          _buildNavItem(Icons.analytics_rounded, 2, "Reports"),
+          _buildNavItem(Icons.person_rounded, 3, "Profile"),
+        ],
       ),
     );
   }
@@ -612,7 +599,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
         children: [
           Icon(
             icon,
-            color: isSelected ? Colors.purpleAccent : Colors.grey,
+            color: isSelected ? const Color(0xFF4A00E0) : Colors.grey.shade400,
             size: 24,
           ),
           if (isSelected)
@@ -622,7 +609,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 10,
-                  color: Colors.purpleAccent,
+                  color: const Color(0xFF4A00E0),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -632,34 +619,35 @@ class _StaffHomePageState extends State<StaffHomePage> {
     );
   }
 
+  // --- UPDATED FAB WITH ACTION ---
   Widget _buildCenterFab() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 45),
       height: 65,
       width: 65,
-      child: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        shape: const CircleBorder(),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFFE100FF), Color(0xFF8E2DE2)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                // ignore: deprecated_member_use
-                color: const Color(0xFFE100FF).withOpacity(0.4),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E006A), Color(0xFF4A00E0)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            // ignore: deprecated_member_use
+            color: const Color(0xFF4A00E0).withOpacity(0.4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
-          child: const Icon(Icons.add, size: 30, color: Colors.white),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: _showQuickCreateMenu, // Calls the menu now
+          child: const Center(
+            child: Icon(Icons.add, size: 30, color: Colors.white),
+          ),
         ),
       ),
     );

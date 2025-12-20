@@ -10,41 +10,52 @@ class StudentAlertsPage extends StatefulWidget {
 }
 
 class _StudentAlertsPageState extends State<StudentAlertsPage> {
-  // --- MOCK DATA ---
-  final List<Map<String, dynamic>> _notifications = [
+  // --- MOCK DATA (SYNCED WITH ATTENDANCE HISTORY) ---
+  // Removed 'final' so we can modify the list (delete/undo)
+  // ignore: prefer_final_fields
+  List<Map<String, dynamic>> _notifications = [
     {
       "id": "1",
-      "title": "Attendance Warning",
+      "title": "MC Submission Received",
       "message":
-          "Your attendance in Cryptography (CSCI 4333) has dropped to 82%. Please attend the next class.",
-      "time": DateTime.now().subtract(const Duration(minutes: 45)),
-      "type": "Warning", // Warning, Info, Success
+          "Your MC for CSCI 4332 (Digital Evidence Forensics) has been uploaded. Status: Pending Approval by Dr Andi Fitriah.",
+      "time": DateTime.now().subtract(const Duration(minutes: 2)),
+      "type": "Info",
       "isRead": false,
     },
     {
       "id": "2",
-      "title": "Class Cancelled",
+      "title": "Official Warning Letter",
       "message":
-          "Dr. Nurul Liyana has cancelled tomorrow's Computation class due to urgent matters.",
-      "time": DateTime.now().subtract(const Duration(hours: 3)),
-      "type": "Urgent",
+          "URGENT: Your attendance for CSCI 4300 (Computation and Complexity) dropped below 80% in the first half of the semester. A warning letter has been issued to your portal.",
+      "time": DateTime.now().subtract(const Duration(hours: 5)),
+      "type": "Warning",
       "isRead": false,
     },
     {
       "id": "3",
-      "title": "Assignment Due Soon",
+      "title": "Low Attendance Alert",
       "message":
-          "Reminder: Digital Forensics Report is due this Friday at 11:59 PM.",
+          "System Alert: You have missed 3 classes for CSCI 4332 (Digital Evidence Forensics). Please ensure you attend all remaining classes to avoid being barred.",
       "time": DateTime.now().subtract(const Duration(days: 1)),
-      "type": "Info",
+      "type": "Urgent",
       "isRead": true,
     },
     {
       "id": "4",
-      "title": "Submission Successful",
+      "title": "Class Replacement",
       "message":
-          "Your MC submission for 24th Nov has been approved by the admin.",
+          "Dr. Andi Fitriah has scheduled a replacement class for Network Security on Saturday, 10:00 AM at Lab 2.",
       "time": DateTime.now().subtract(const Duration(days: 2)),
+      "type": "Info",
+      "isRead": true,
+    },
+    {
+      "id": "5",
+      "title": "MC Approved",
+      "message":
+          "Your previous MC submission for CSCI 4402 (Final Year Project II) absent on Week 5 has been APPROVED.",
+      "time": DateTime.now().subtract(const Duration(days: 5)),
       "type": "Success",
       "isRead": true,
     },
@@ -61,15 +72,50 @@ class _StudentAlertsPageState extends State<StudentAlertsPage> {
     );
   }
 
-  void _deleteNotification(int index) {
+  // UPDATED: Logic to remove and restore item
+  void _deleteNotification(Map<String, dynamic> item) {
+    // 1. Find index to restore later
+    final int index = _notifications.indexOf(item);
+
+    // 2. Remove
     setState(() {
-      _notifications.removeAt(index);
+      _notifications.remove(item);
     });
+
+    // 3. Show Snackbar with Undo
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text("Notification removed"),
+        action: SnackBarAction(
+          label: "Undo",
+          textColor: Colors.yellow,
+          onPressed: () {
+            // 4. Restore Logic
+            setState(() {
+              if (index >= 0 && index <= _notifications.length) {
+                _notifications.insert(index, item);
+              } else {
+                _notifications.add(item);
+              }
+            });
+          },
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    int unreadCount = _notifications.where((n) => n['isRead'] == false).length;
+    // SEPARATE LISTS
+    List<Map<String, dynamic>> newNotifications = _notifications
+        .where((n) => n['isRead'] == false)
+        .toList();
+    List<Map<String, dynamic>> pastNotifications = _notifications
+        .where((n) => n['isRead'] == true)
+        .toList();
+
+    int unreadCount = newNotifications.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
@@ -154,18 +200,74 @@ class _StudentAlertsPageState extends State<StudentAlertsPage> {
             ),
           ),
 
-          // --- 2. NOTIFICATION LIST ---
+          // --- 2. HINT TEXT (REQUIREMENT 1) ---
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            color: Colors.grey.shade200,
+            child: Row(
+              children: [
+                Icon(Icons.touch_app, size: 14, color: Colors.grey.shade600),
+                const SizedBox(width: 8),
+                Text(
+                  "Tip: Swipe left on a card to delete it.",
+                  style: GoogleFonts.lato(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // --- 3. NOTIFICATION LISTS (SEPARATED) ---
           Expanded(
             child: _notifications.isEmpty
                 ? _buildEmptyState()
-                : ListView.builder(
+                : SingleChildScrollView(
                     // Padding bottom 120 ensures content clears the floating nav bar
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-                    itemCount: _notifications.length,
-                    itemBuilder: (context, index) {
-                      final item = _notifications[index];
-                      return _buildNotificationItem(item, index);
-                    },
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // NEW SECTION
+                        if (newNotifications.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Text(
+                              "New Notifications",
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          ...newNotifications.map(
+                            (item) => _buildNotificationItem(item),
+                          ),
+                        ],
+
+                        // PAST SECTION
+                        if (pastNotifications.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(top: 20, bottom: 10),
+                            child: Text(
+                              "Past Notifications",
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ),
+                          ...pastNotifications.map(
+                            (item) => _buildNotificationItem(item),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
           ),
         ],
@@ -202,7 +304,7 @@ class _StudentAlertsPageState extends State<StudentAlertsPage> {
     );
   }
 
-  Widget _buildNotificationItem(Map<String, dynamic> item, int index) {
+  Widget _buildNotificationItem(Map<String, dynamic> item) {
     // Determine Styles based on Type
     Color iconColor;
     Color bgColor;
@@ -230,21 +332,10 @@ class _StudentAlertsPageState extends State<StudentAlertsPage> {
 
     // SWIPE TO DISMISS WIDGET
     return Dismissible(
-      key: Key(item['id']),
+      key: Key(item['id']), // Unique key is vital for deletion
       direction: DismissDirection.endToStart,
       onDismissed: (direction) {
-        _deleteNotification(index);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Notification removed"),
-            action: SnackBarAction(
-              label: "Undo",
-              onPressed: () {
-                // Logic to undo could go here (requires complex state management)
-              },
-            ),
-          ),
-        );
+        _deleteNotification(item);
       },
       background: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -372,6 +463,7 @@ class _StudentAlertsPageState extends State<StudentAlertsPage> {
     final difference = now.difference(time);
 
     if (difference.inMinutes < 60) {
+      if (difference.inMinutes < 1) return "Just now";
       return "${difference.inMinutes} mins ago";
     } else if (difference.inHours < 24) {
       return "${difference.inHours} hours ago";

@@ -9,20 +9,25 @@ class StaffProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F8FA), // Clean Light Background
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // 1. DARK BACKGROUND
+          // 1. HEADER BACKGROUND (Matches Staff Home)
           Container(
+            height: 320,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF0F0C29),
-                  Color(0xFF302B63),
-                  Color(0xFF24243E),
+                  Color(0xFF1A0038), // Deep Midnight Purple
+                  Color(0xFF4A00E0), // Royal Purple
                 ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
               ),
             ),
           ),
@@ -33,41 +38,33 @@ class StaffProfilePage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 100),
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
                   // --- PROFILE HEADER ---
                   Center(
                     child: Column(
                       children: [
+                        // Avatar Ring
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Colors.cyanAccent, Colors.purpleAccent],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                // ignore: deprecated_member_use
-                                color: Colors.purpleAccent.withOpacity(0.4),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              ),
-                            ],
+                            // ignore: deprecated_member_use
+                            color: Colors.white.withOpacity(0.2),
                           ),
                           child: const CircleAvatar(
                             radius: 50,
-                            backgroundColor: Color(0xFF0F0C29),
+                            backgroundColor: Colors.white,
                             backgroundImage: NetworkImage(
-                              'https://i.pravatar.cc/300?img=11',
-                            ), // Mock ID
+                              'https://italeemc.iium.edu.my/pluginfile.php/5130/user/icon/remui/f3?rev=175531',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
+
+                        // Name & Department
                         Text(
-                          "Dr. Takumi Sase",
+                          "Dr. Andi Fitriah",
                           style: GoogleFonts.poppins(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -78,38 +75,59 @@ class StaffProfilePage extends StatelessWidget {
                           "Senior Lecturer • Dept of Computer Science",
                           style: GoogleFonts.lato(
                             fontSize: 14,
-                            color: Colors.white54,
+                            color: Colors.white70,
                           ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // STATS ROW
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildStat("Classes", "3"),
-                            _buildDivider(),
-                            _buildStat("Students", "142"),
-                            _buildDivider(),
-                            _buildStat("Rating", "4.8"),
-                          ],
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
 
-                  // --- SETTINGS SECTION ---
+                  // --- FLOATING STATS CARD ---
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildStat("Courses", "3"),
+                        _buildVerticalDivider(),
+                        _buildStat("Students", "142"),
+                        _buildVerticalDivider(),
+                        _buildStat(
+                          "Consultations",
+                          "8",
+                        ), // Updated for Lecturer relevance
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // --- MENU SECTIONS ---
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // SECTION 1: ACADEMIC
                         Text(
-                          "ACCOUNT SETTINGS",
+                          "ACADEMIC MANAGEMENT",
                           style: GoogleFonts.lato(
-                            color: Colors.white38,
+                            color: Colors.grey.shade600,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
@@ -117,32 +135,29 @@ class StaffProfilePage extends StatelessWidget {
                         ),
                         const SizedBox(height: 15),
                         _buildSettingsTile(
-                          Icons.person_outline,
-                          "Personal Information",
-                          "Update name & contact",
+                          Icons.menu_book_rounded,
+                          "My Courses",
+                          "Syllabus & Materials",
                         ),
                         _buildSettingsTile(
-                          Icons.notifications_none,
-                          "Notifications",
-                          "Manage alerts & emails",
+                          Icons.calendar_today_rounded,
+                          "Consultation Requests",
+                          "Manage student appointments",
+                          hasNotification: true, // Red dot indicator
                         ),
                         _buildSettingsTile(
-                          Icons.lock_outline,
-                          "Privacy & Security",
-                          "Biometrics & Password",
-                        ),
-                        _buildSettingsTile(
-                          Icons.language,
-                          "Language",
-                          "English (US)",
+                          Icons.people_alt_rounded,
+                          "Student Directory",
+                          "View profiles & performance",
                         ),
 
                         const SizedBox(height: 30),
 
+                        // SECTION 2: STAFF SERVICES
                         Text(
-                          "SUPPORT",
+                          "STAFF SERVICES",
                           style: GoogleFonts.lato(
-                            color: Colors.white38,
+                            color: Colors.grey.shade600,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
@@ -150,14 +165,33 @@ class StaffProfilePage extends StatelessWidget {
                         ),
                         const SizedBox(height: 15),
                         _buildSettingsTile(
-                          Icons.help_outline,
-                          "Help Center",
-                          "FAQ & Guides",
+                          Icons.flight_takeoff_rounded,
+                          "Leave Application",
+                          "Apply for annual/medical leave",
                         ),
                         _buildSettingsTile(
-                          Icons.info_outline,
-                          "About AttenDID",
-                          "Version 1.0.0",
+                          Icons.campaign_rounded,
+                          "Faculty Announcements",
+                          "Latest updates & circulars",
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // SECTION 3: ACCOUNT
+                        Text(
+                          "ACCOUNT",
+                          style: GoogleFonts.lato(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        _buildSettingsTile(
+                          Icons.settings_outlined,
+                          "Profile Settings",
+                          "Password & Security",
                         ),
 
                         const SizedBox(height: 40),
@@ -165,7 +199,7 @@ class StaffProfilePage extends StatelessWidget {
                         // --- LOGOUT BUTTON ---
                         SizedBox(
                           width: double.infinity,
-                          child: OutlinedButton(
+                          child: ElevatedButton(
                             onPressed: () {
                               Navigator.pushAndRemoveUntil(
                                 context,
@@ -173,9 +207,10 @@ class StaffProfilePage extends StatelessWidget {
                                 (route) => false,
                               );
                             },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.redAccent,
-                              side: const BorderSide(color: Colors.redAccent),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade50,
+                              foregroundColor: Colors.red,
+                              elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15),
@@ -214,58 +249,83 @@ class StaffProfilePage extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.black87,
             ),
           ),
           Text(
             label,
-            style: GoogleFonts.lato(fontSize: 12, color: Colors.white54),
+            style: GoogleFonts.lato(fontSize: 12, color: Colors.grey.shade500),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return Container(height: 30, width: 1, color: Colors.white12);
+  Widget _buildVerticalDivider() {
+    return Container(height: 30, width: 1, color: Colors.grey.shade200);
   }
 
-  Widget _buildSettingsTile(IconData icon, String title, String subtitle) {
+  Widget _buildSettingsTile(
+    IconData icon,
+    String title,
+    String subtitle, {
+    bool hasNotification = false,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        // ignore: deprecated_member_use
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        // ignore: deprecated_member_use
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            // ignore: deprecated_member_use
+            color: Colors.grey.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             // ignore: deprecated_member_use
-            color: Colors.white.withOpacity(0.05),
+            color: const Color(0xFF4A00E0).withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: Colors.white70, size: 20),
+          child: Icon(icon, color: const Color(0xFF4A00E0), size: 20),
         ),
         title: Text(
           title,
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Colors.black87,
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.lato(color: Colors.white38, fontSize: 12),
+          style: GoogleFonts.lato(color: Colors.grey.shade500, fontSize: 12),
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 14,
-          color: Colors.white24,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasNotification)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.redAccent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: Colors.grey.shade300,
+            ),
+          ],
         ),
         onTap: () {},
       ),

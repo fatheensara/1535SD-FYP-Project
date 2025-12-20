@@ -2,69 +2,119 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-class StudentScanActivityPage extends StatelessWidget {
+class StudentScanActivityPage extends StatefulWidget {
   const StudentScanActivityPage({super.key});
 
   @override
+  State<StudentScanActivityPage> createState() =>
+      _StudentScanActivityPageState();
+}
+
+class _StudentScanActivityPageState extends State<StudentScanActivityPage> {
+  // State for Dropdown
+  String _selectedFilter = "Current Week";
+
+  // --- MOCK DATA: CURRENT WEEK (Synced with Alerts & History) ---
+  final List<Map<String, dynamic>> _currentWeekLogs = [
+    {
+      "subject": "CSCI 4332",
+      "code": "DEF",
+      "name": "Digital Evidence Forensics",
+      "action": "MC Submission", // New Action Type
+      "device": "Student App Upload",
+      "time": DateTime.now().subtract(
+        const Duration(minutes: 2),
+      ), // Matches Alert
+      "status": "Pending", // Status reflected in Alerts
+      "location": "Online",
+      "type": "submission", // submission vs scan
+    },
+    {
+      "subject": "CSCI 4402",
+      "code": "FYP2",
+      "name": "Final Year Project II",
+      "action": "Class Attendance",
+      "device": "Lecturer Device (Dr. Ahmad Anwar bin Zainuddin)",
+      "time": DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+      "status": "Success",
+      "location": "MPH KICT",
+      "type": "scan",
+    },
+    {
+      "subject": "CSCI 4336",
+      "code": "NETSEC",
+      "name": "Network Security",
+      "action": "Class Attendance",
+      "device": "Lecturer Device (Dr. Andi Fitriah binti Abdul Kadir)",
+      "time": DateTime.now().subtract(const Duration(days: 2, hours: 4)),
+      "status": "Success",
+      "location": "Computer Lab 2",
+      "type": "scan",
+    },
+  ];
+
+  // --- MOCK DATA: PAST ACTIVITY ---
+  final List<Map<String, dynamic>> _pastLogs = [
+    {
+      "subject": "CSCI 4333",
+      "code": "CRYPTO",
+      "name": "Cryptography",
+      "action": "Class Attendance",
+      "device": "Main Hall Attendance",
+      "time": DateTime.now().subtract(const Duration(days: 8)),
+      "status": "Failed", // Example of failure
+      "location": "Main Hall",
+      "type": "scan",
+    },
+    {
+      "subject": "CSCI 4300",
+      "code": "COMP",
+      "name": "Computation & Complexity",
+      "action": "Class Attendance",
+      "device": "Lecturer Device (Dr. Nurul)",
+      "time": DateTime.now().subtract(const Duration(days: 9)),
+      "status": "Success",
+      "location": "Lecture Hall 1",
+      "type": "scan",
+    },
+    {
+      "subject": "CSCI 4332",
+      "code": "DEF",
+      "name": "Digital Evidence Forensics",
+      "action": "Class Attendance",
+      "device": "Lab 3 NFC Reader",
+      "time": DateTime.now().subtract(const Duration(days: 10)),
+      "status": "Success",
+      "location": "Computer Lab 3",
+      "type": "scan",
+    },
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    // Mock Data: I have expanded your uploaded data to include "Subject" & "Location"
-    // so the timeline design looks complete.
-    final List<Map<String, dynamic>> logs = [
-      {
-        "subject": "CSCI 4300", // Added for context
-        "name": "Computation & Complexity", // Added for context
-        "device": "Lecturer Device (Dr. Nurul)", // From your file
-        "time": DateTime.now().subtract(const Duration(minutes: 5)),
-        "status": "Success",
-        "location": "Lab 3", // Added for context
-      },
-      {
-        "subject": "CSCI 4332",
-        "name": "Digital Evidence Forensics",
-        "device": "Lecturer Device (Dr. Andi)",
-        "time": DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-        "status": "Success",
-        "location": "Lecture Hall 2",
-      },
-      {
-        "subject": "CSCI 4333",
-        "name": "Cryptography",
-        "device": "Main Hall Attendance", // From your file
-        "time": DateTime.now().subtract(const Duration(days: 3)),
-        "status": "Failed", // Changed one to failed to show design variety
-        "location": "Main Hall",
-      },
-      {
-        "subject": "CSCI 4300",
-        "name": "Computation & Complexity",
-        "device": "Lecturer Device (Dr. Nurul)",
-        "time": DateTime.now().subtract(const Duration(days: 7)),
-        "status": "Success",
-        "location": "Lab 3",
-      },
-    ];
+    // Select data source based on dropdown
+    final List<Map<String, dynamic>> logs = _selectedFilter == "Current Week"
+        ? _currentWeekLogs
+        : _pastLogs;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       appBar: AppBar(
         title: Text(
-          "Scan Activity",
+          "Activity Log",
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         centerTitle: true,
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.filter_list)),
-        ],
       ),
       body: Column(
         children: [
-          // --- 1. STREAK SUMMARY HEADER (Added for "Interesting" Design) ---
+          // --- 1. FILTER HEADER ---
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
@@ -78,37 +128,59 @@ class StudentScanActivityPage extends StatelessWidget {
               ],
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.history_edu,
-                    color: Colors.green,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    Text(
-                      "Recent Activity",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.history_toggle_off,
+                        color: Colors.blue.shade700,
+                        size: 24,
                       ),
                     ),
-                    Text(
-                      "You have ${logs.length} scan records this week.",
-                      style: GoogleFonts.lato(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
+                    const SizedBox(width: 15),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "View Activity",
+                          style: GoogleFonts.lato(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        // DROPDOWN BUTTON
+                        DropdownButton<String>(
+                          value: _selectedFilter,
+                          icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                          isDense: true,
+                          underline: const SizedBox(), // Remove underline
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedFilter = newValue!;
+                            });
+                          },
+                          items: <String>['Current Week', 'Past Activity']
+                              .map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              })
+                              .toList(),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -118,15 +190,25 @@ class StudentScanActivityPage extends StatelessWidget {
 
           // --- 2. TIMELINE LIST ---
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-              itemCount: logs.length,
-              itemBuilder: (context, index) {
-                final log = logs[index];
-                bool isLast = index == logs.length - 1;
-                return _buildTimelineItem(log, isLast);
-              },
-            ),
+            child: logs.isEmpty
+                ? Center(
+                    child: Text(
+                      "No records found.",
+                      style: GoogleFonts.lato(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 30,
+                    ),
+                    itemCount: logs.length,
+                    itemBuilder: (context, index) {
+                      final log = logs[index];
+                      bool isLast = index == logs.length - 1;
+                      return _buildTimelineItem(log, isLast);
+                    },
+                  ),
           ),
         ],
       ),
@@ -135,7 +217,25 @@ class StudentScanActivityPage extends StatelessWidget {
 
   Widget _buildTimelineItem(Map<String, dynamic> log, bool isLast) {
     bool isSuccess = log['status'] == 'Success';
-    Color statusColor = isSuccess ? Colors.green : Colors.red;
+    bool isPending = log['status'] == 'Pending';
+
+    // Color Logic
+    Color statusColor;
+    if (isPending) {
+      statusColor = Colors.orange;
+    } else if (isSuccess) {
+      statusColor = Colors.green;
+    } else {
+      statusColor = Colors.red;
+    }
+
+    // Icon Logic
+    IconData actionIcon;
+    if (log['type'] == 'submission') {
+      actionIcon = Icons.upload_file;
+    } else {
+      actionIcon = Icons.nfc;
+    }
 
     return IntrinsicHeight(
       child: Row(
@@ -221,14 +321,15 @@ class StudentScanActivityPage extends StatelessWidget {
                   ],
                   border: isSuccess
                       ? Border.all(color: Colors.transparent)
-                      : Border.all(color: Colors.red.shade100),
+                      // ignore: deprecated_member_use
+                      : Border.all(color: statusColor.withOpacity(0.3)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header: Subject Code & Status Icon
+                      // Header: Subject Code & Status Badge
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -264,13 +365,17 @@ class StudentScanActivityPage extends StatelessWidget {
                             child: Row(
                               children: [
                                 Icon(
-                                  isSuccess ? Icons.check_circle : Icons.error,
+                                  isSuccess
+                                      ? Icons.check_circle
+                                      : (isPending
+                                            ? Icons.hourglass_top
+                                            : Icons.error),
                                   color: statusColor,
                                   size: 14,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  isSuccess ? "Verified" : "Failed",
+                                  log['status'],
                                   style: GoogleFonts.poppins(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -284,13 +389,30 @@ class StudentScanActivityPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
 
-                      // Class Name
+                      // Activity Name (Scan or Submission)
+                      Row(
+                        children: [
+                          Icon(actionIcon, size: 18, color: Colors.black87),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              log['action'], // "Class Attendance" or "MC Submission"
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 4),
                       Text(
-                        log['name'],
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                          color: Colors.black87,
+                        log['name'], // Subject Name
+                        style: GoogleFonts.lato(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
                         ),
                       ),
 
@@ -298,11 +420,11 @@ class StudentScanActivityPage extends StatelessWidget {
                       Divider(height: 1, color: Colors.grey.shade100),
                       const SizedBox(height: 12),
 
-                      // Device Info Row
+                      // Device/Source Info
                       Row(
                         children: [
                           Icon(
-                            Icons.nfc_rounded,
+                            Icons.devices,
                             size: 16,
                             color: Colors.grey.shade400,
                           ),
@@ -340,8 +462,8 @@ class StudentScanActivityPage extends StatelessWidget {
                         ],
                       ),
 
-                      // Error Message if failed
-                      if (!isSuccess)
+                      // Specific Error Message
+                      if (!isSuccess && !isPending)
                         Container(
                           margin: const EdgeInsets.only(top: 12),
                           padding: const EdgeInsets.all(8),

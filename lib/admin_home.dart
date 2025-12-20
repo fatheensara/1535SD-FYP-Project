@@ -545,6 +545,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildPlaceholder(String title) {
     return Center(
       child: Text(

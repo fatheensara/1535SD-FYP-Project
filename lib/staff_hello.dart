@@ -21,7 +21,7 @@ class StaffHelloPage extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               // ignore: deprecated_member_use
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withOpacity(0.2), // Increased visibility
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -35,7 +35,7 @@ class StaffHelloPage extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // 1. DYNAMIC BACKGROUND
+          // 1. DYNAMIC BACKGROUND (SYNCED WITH STUDENT THEME)
           _buildBackground(context),
 
           // 2. CONTENT
@@ -58,7 +58,7 @@ class StaffHelloPage extends StatelessWidget {
                     shadows: [
                       Shadow(
                         // ignore: deprecated_member_use
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withOpacity(0.2), // Softer shadow
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -69,7 +69,7 @@ class StaffHelloPage extends StatelessWidget {
                   "Manage classes & monitor attendance",
                   style: GoogleFonts.lato(
                     fontSize: 16,
-                    color: Colors.grey.shade400,
+                    color: Colors.white70, // Lighter text color
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -96,38 +96,32 @@ class StaffHelloPage extends StatelessWidget {
       height: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF0F0C29), // Onyx Black
-            Color(0xFF302B63), // Deep Midnight Purple
-            Color(0xFF24243E), // Dark Slate
-          ],
+          // STUDENT THEME GRADIENT (Royal Purple/Blue)
+          colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
       child: Stack(
         children: [
-          // Overlay
-          // ignore: deprecated_member_use
-          Container(color: Colors.black.withOpacity(0.2)),
-
-          // Blob 1
+          // Blob 1 (Lighter Accent)
           Positioned(
             top: -100,
             left: -50,
-            child: _buildBlob(Colors.deepPurple.shade900, 300),
+            child: _buildBlob(const Color(0xFFA155E8), 300),
           ),
-          // Blob 2
+          // Blob 2 (Darker Accent for Depth)
           Positioned(
             top: MediaQuery.of(context).size.height * 0.3,
             right: -100,
-            child: _buildBlob(Colors.indigo.shade900, 250),
+            child: _buildBlob(const Color(0xFF2B008A), 250),
           ),
           // Blob 3
           Positioned(
             bottom: -50,
             left: -50,
-            child: _buildBlob(Colors.blueGrey.shade900, 200),
+            // ignore: deprecated_member_use
+            child: _buildBlob(Colors.white.withOpacity(0.1), 200),
           ),
 
           // Blur
@@ -147,11 +141,11 @@ class StaffHelloPage extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         // ignore: deprecated_member_use
-        color: color.withOpacity(0.6),
+        color: color.withOpacity(0.5),
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: color.withOpacity(0.6),
+            color: color.withOpacity(0.5),
             blurRadius: 90,
             spreadRadius: 20,
           ),
@@ -171,20 +165,20 @@ class StaffHelloPage extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             // ignore: deprecated_member_use
-            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.2),
             // ignore: deprecated_member_use
-            Colors.white.withOpacity(0.05),
+            Colors.white.withOpacity(0.1),
           ],
         ),
         border: Border.all(
           // ignore: deprecated_member_use
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 30,
             spreadRadius: 5,
             offset: const Offset(0, 10),
@@ -196,7 +190,7 @@ class StaffHelloPage extends StatelessWidget {
           padding: const EdgeInsets.all(25),
           decoration: BoxDecoration(
             // ignore: deprecated_member_use
-            color: Colors.deepPurple.withOpacity(0.2),
+            color: Colors.white.withOpacity(0.15),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.badge_rounded, size: 60, color: Colors.white),
@@ -216,14 +210,14 @@ class StaffHelloPage extends StatelessWidget {
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               // ignore: deprecated_member_use
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.white.withOpacity(0.1), // Lighter, cleaner glass
               borderRadius: BorderRadius.circular(30),
               // ignore: deprecated_member_use
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
               boxShadow: [
                 BoxShadow(
                   // ignore: deprecated_member_use
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -243,7 +237,9 @@ class StaffHelloPage extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF0F0C29),
+                    foregroundColor: const Color(
+                      0xFF4A00E0,
+                    ), // Matching Purple Text
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     elevation: 0,
                     shape: RoundedRectangleBorder(

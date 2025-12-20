@@ -28,7 +28,7 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               // ignore: deprecated_member_use
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withOpacity(0.2), // Lighter back button
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -38,7 +38,6 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
             ),
           ),
           onPressed: () {
-            // *** NAVIGATION UPDATE ***
             Navigator.pushReplacement(
               context,
               FadePageRoute(page: const StaffHelloPage()),
@@ -57,15 +56,11 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
       ),
       body: Stack(
         children: [
-          // 1. DARK BACKGROUND
+          // 1. LIGHTER PURPLE BACKGROUND (MATCHING THEME)
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0F0C29),
-                  Color(0xFF302B63),
-                  Color(0xFF24243E),
-                ],
+                colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -86,13 +81,21 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     "Register to access staff dashboard",
                     style: GoogleFonts.lato(
-                      color: Colors.white54,
+                      color: Colors.white70, // Lighter text
                       fontSize: 16,
                     ),
                   ),
@@ -107,13 +110,22 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
                         padding: const EdgeInsets.all(30),
                         decoration: BoxDecoration(
                           // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.white.withOpacity(
+                            0.1,
+                          ), // Light Glass Container
                           borderRadius: BorderRadius.circular(25),
-                          // ignore: deprecated_member_use
                           border: Border.all(
                             // ignore: deprecated_member_use
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withOpacity(0.2),
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              // ignore: deprecated_member_use
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                            ),
+                          ],
                         ),
                         child: Column(
                           children: [
@@ -145,7 +157,6 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
                               height: 55,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // Simplified Success Dialog
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
@@ -162,10 +173,13 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: const Color(0xFF0F0C29),
+                                  foregroundColor: const Color(
+                                    0xFF4A00E0,
+                                  ), // Purple Text
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15),
                                   ),
+                                  elevation: 0,
                                 ),
                                 child: Text(
                                   "REGISTER",
@@ -197,14 +211,15 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
                         text: "Already a staff member? ",
                         style: GoogleFonts.lato(
                           // ignore: deprecated_member_use
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white70,
                           fontSize: 16,
                         ),
                         children: <TextSpan>[
                           TextSpan(
                             text: "Login",
                             style: GoogleFonts.lato(
-                              color: Colors.purple.shade200,
+                              color: Colors
+                                  .white, // White bold text for visibility
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                             ),
@@ -231,23 +246,24 @@ class _StaffSignUpPageState extends State<StaffSignUpPage> {
     return Container(
       decoration: BoxDecoration(
         // ignore: deprecated_member_use
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.white.withOpacity(0.2), // Light glass input
         borderRadius: BorderRadius.circular(15),
       ),
       child: TextFormField(
         obscureText: isPassword ? _isPasswordObscured : false,
         style: GoogleFonts.lato(color: Colors.white),
+        cursorColor: Colors.white,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.lato(color: Colors.white38),
-          prefixIcon: Icon(icon, color: Colors.white54, size: 22),
+          hintStyle: GoogleFonts.lato(color: Colors.white70),
+          prefixIcon: Icon(icon, color: Colors.white70, size: 22),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     _isPasswordObscured
                         ? Icons.visibility_off
                         : Icons.visibility,
-                    color: Colors.white38,
+                    color: Colors.white70,
                     size: 20,
                   ),
                   onPressed: () {

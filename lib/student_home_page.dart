@@ -58,9 +58,31 @@ class _StudentHomePageState extends State<StudentHomePage> {
           "status": "Present",
           "type": "Lecture",
         },
+        // --- NEW SUBJECT ADDED ---
+        {
+          "title": "CSCI 4336 - Network Security",
+          "fullTitle": "CSCI 4336 - Network Security",
+          "time": "02:00 PM - 03:20 PM",
+          "lecturer": "Dr. Andi Fitriah",
+          "status": "Pending",
+          "type": "Lecture",
+        },
       ];
     }
-    // Weekends & Friday
+    // Friday
+    else if (day == DateTime.friday) {
+      return [
+        {
+          "title": "CSCI 4402 - Final Year Project II",
+          "fullTitle": "CSCI 4402 - Final Year Project II",
+          "time": "11:30 AM - 12:50 PM",
+          "lecturer": "Dr. Ahmad Anwar bin Zainuddin",
+          "status": "Present",
+          "type": "Lecture",
+        },
+      ];
+    }
+    // Weekends
     else {
       return [];
     }

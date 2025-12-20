@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+// =========================================================
+// PAGE 1: MAIN SUMMARY PAGE
+// =========================================================
 class StudentHistoryPage extends StatefulWidget {
   const StudentHistoryPage({super.key});
 
@@ -10,96 +13,220 @@ class StudentHistoryPage extends StatefulWidget {
 }
 
 class _StudentHistoryPageState extends State<StudentHistoryPage> {
-  // Filter State
-  String _selectedFilter = 'All Time';
-  final List<String> _filterOptions = [
-    'All Time',
-    'This Week',
-    'This Month',
-    'This Year',
-  ];
+  // Data holder
+  Map<String, List<Map<String, dynamic>>> _groupedData = {};
+  final Map<String, Map<String, dynamic>> _subjectStats = {};
 
-  // --- MOCK DATA: PAST ATTENDANCE RECORDS ---
-  final List<Map<String, dynamic>> _allHistoryData = [
-    {
-      "date": DateTime.now().subtract(const Duration(hours: 2)), // Today
-      "title": "CSCI 4300 - Computation",
-      "status": "Present",
-      "time": "10:00 AM",
-    },
-    {
-      "date": DateTime.now().subtract(const Duration(days: 1)), // Yesterday
-      "title": "CSCI 4332 - Digital Forensics",
-      "status": "Present",
-      "time": "11:30 AM",
-    },
-    {
-      "date": DateTime.now().subtract(const Duration(days: 2)),
-      "title": "CSCI 4333 - Cryptography",
-      "status": "Late",
-      "time": "02:00 PM",
-    },
-    {
-      "date": DateTime.now().subtract(const Duration(days: 5)),
-      "title": "CSCI 4300 - Computation",
-      "status": "Excused",
-      "time": "10:00 AM",
-    },
-    {
-      "date": DateTime.now().subtract(const Duration(days: 10)),
-      "title": "CSCI 4332 - Digital Forensics",
-      "status": "Absent",
-      "time": "11:30 AM",
-    },
-    {
-      "date": DateTime.now().subtract(const Duration(days: 25)),
-      "title": "CSCI 4333 - Cryptography",
-      "status": "Present",
-      "time": "09:00 AM",
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _generateMockData();
+  }
 
-  // --- FILTER LOGIC ---
-  List<Map<String, dynamic>> get _filteredData {
-    DateTime now = DateTime.now();
+  // --- MOCK DATA GENERATOR ---
+  void _generateMockData() {
+    DateTime semStart = DateTime(2025, 10, 6);
 
-    return _allHistoryData.where((record) {
-      DateTime date = record['date'];
+    // Helper function
+    List<Map<String, dynamic>> generateClassDates(
+      String title,
+      String time,
+      int dayOfWeek1, // 1=Mon, 2=Tue...
+      int dayOfWeek2, // If -1, only 1 class/week
+      List<bool> attendancePattern, {
+      int maxWeeks = 14,
+    }) {
+      List<Map<String, dynamic>> classes = [];
+      int patternIndex = 0;
 
-      if (_selectedFilter == 'This Week') {
-        // Last 7 days
-        return date.isAfter(now.subtract(const Duration(days: 7)));
-      } else if (_selectedFilter == 'This Month') {
-        // Same month and year
-        return date.month == now.month && date.year == now.year;
-      } else if (_selectedFilter == 'This Year') {
-        // Same year
-        return date.year == now.year;
+      for (int week = 0; week < maxWeeks; week++) {
+        DateTime weekStart = semStart.add(Duration(days: week * 7));
+
+        // Class 1
+        DateTime class1Date = weekStart.add(Duration(days: dayOfWeek1 - 1));
+        if (patternIndex < attendancePattern.length) {
+          bool isPresent = attendancePattern[patternIndex];
+          classes.add({
+            "date": class1Date,
+            "title": title,
+            "time": time,
+            "status": isPresent ? "Present" : "Absent",
+            "week": week + 1,
+          });
+          patternIndex++;
+        }
+
+        // Class 2 (Only if dayOfWeek2 is not -1)
+        if (dayOfWeek2 != -1) {
+          DateTime class2Date = weekStart.add(Duration(days: dayOfWeek2 - 1));
+          if (patternIndex < attendancePattern.length) {
+            bool isPresent = attendancePattern[patternIndex];
+            classes.add({
+              "date": class2Date,
+              "title": title,
+              "time": time,
+              "status": isPresent ? "Present" : "Absent",
+              "week": week + 1,
+            });
+            patternIndex++;
+          }
+        }
       }
-      return true; // 'All Time'
-    }).toList();
+      classes.sort((a, b) => b['date'].compareTo(a['date']));
+      return classes;
+    }
+
+    // --- SCENARIO 1: CSCI 4300 (Warning Mid-Sem -> Good Overall) ---
+    final List<bool> pattern1 = List.filled(28, true);
+    pattern1[2] = false; // Absent W2
+    pattern1[5] = false; // Absent W3
+    pattern1[8] = false; // Absent W5 (Total 3 absences in first 7 weeks)
+
+    var sub1 = generateClassDates(
+      "CSCI 4300 - Computation and Complexity",
+      "10:00 AM",
+      1,
+      3,
+      pattern1, // Mon & Wed
+    );
+
+    // --- SCENARIO 2: CSCI 4332 (DEF) ---
+    final List<bool> patternDEF = List.filled(28, true);
+    // Student starts skipping in Week 9, 10, 11
+    patternDEF[16] = false;
+    patternDEF[17] = false;
+    patternDEF[18] = false;
+    patternDEF[19] = false;
+    patternDEF[20] = false;
+    patternDEF[21] = false;
+    patternDEF[25] = false;
+
+    var subDEF = generateClassDates(
+      "CSCI 4332 - Digital Evidence Forensics",
+      "11:30 AM",
+      2,
+      4,
+      patternDEF, // Tue & Thu
+    );
+
+    // Other Subjects (Standard)
+    final List<bool> patternGood = List.filled(28, true);
+    var subFYP = generateClassDates(
+      "CSCI 4402 - Final Year Project II",
+      "11:30 AM",
+      1,
+      4,
+      patternGood,
+    );
+
+    final List<bool> patternBarred = List.filled(28, true);
+    // ignore: curly_braces_in_flow_control_structures
+    for (int i = 0; i < 8; i++) patternBarred[i * 3] = false; // Barred
+    var subNetSec = generateClassDates(
+      "CSCI 4336 - Network Security",
+      "02:00 PM",
+      2,
+      5,
+      patternBarred,
+    );
+
+    var subCrypto = generateClassDates(
+      "CSCI 4333 - Cryptography",
+      "02:00 PM",
+      1,
+      3,
+      patternGood,
+    );
+
+    _groupedData = {
+      "CSCI 4300 - Computation and Complexity": sub1,
+      "CSCI 4332 - Digital Evidence Forensics": subDEF,
+      "CSCI 4402 - Final Year Project II": subFYP,
+      "CSCI 4336 - Network Security": subNetSec,
+      "CSCI 4333 - Cryptography": subCrypto,
+    };
+
+    // --- CALCULATE STATS ---
+    _groupedData.forEach((subject, records) {
+      // 1. Calculate Mid-Sem Stats
+      var midRecords = records.where((e) => e['week'] <= 7).toList();
+      int midTotal = midRecords.length;
+      int midAttended = midRecords
+          .where((e) => e['status'] == 'Present')
+          .length;
+      double midPercent = midTotal == 0 ? 0 : (midAttended / midTotal) * 100;
+
+      String midStatus = "GOOD";
+      Color midColor = Colors.green;
+      String midLetter = "";
+
+      if (midPercent < 80) {
+        midStatus = "WARNING";
+        midColor = Colors.orange;
+        midLetter = "Warning Letter Issued";
+      }
+
+      // 2. Calculate Overall Stats
+      var allRecords = records;
+      int allTotal = allRecords.length;
+      int allAttended = allRecords
+          .where((e) => e['status'] == 'Present')
+          .length;
+      double allPercent = allTotal == 0 ? 0 : (allAttended / allTotal) * 100;
+
+      String allStatus = "GOOD";
+      Color allColor = Colors.green;
+      String allLetter = "";
+
+      // Logic: No Warning = No Barred
+      if (allPercent < 80) {
+        if (midPercent >= 80) {
+          allStatus = "ATTENTION";
+          allColor = Colors.amber.shade700;
+          allLetter = "";
+        } else {
+          allStatus = "BARRED";
+          allColor = Colors.redAccent;
+          allLetter = "Barred Letter Issued";
+        }
+      } else if (midPercent < 80 && allPercent >= 80) {
+        allStatus = "GOOD";
+        allColor = Colors.green;
+      }
+
+      _subjectStats[subject] = {
+        'midSem': {
+          'percent': midPercent,
+          'status': midStatus,
+          'color': midColor,
+          'letterAction': midLetter,
+          'total': midTotal,
+          'attended': midAttended,
+        },
+        'overall': {
+          'percent': allPercent,
+          'status': allStatus,
+          'color': allColor,
+          'letterAction': allLetter,
+          'total': allTotal,
+          'attended': allAttended,
+        },
+        'mainColor': allPercent < 80
+            ? allColor
+            : (midPercent < 80 ? Colors.orange : Colors.green),
+      };
+    });
+
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    // 1. Get Filtered Data
-    List<Map<String, dynamic>> displayData = _filteredData;
-
-    // 2. Calculate Stats based on FILTERED data
-    int total = displayData.length;
-    int present = displayData.where((e) => e['status'] == 'Present').length;
-    int absent = displayData.where((e) => e['status'] == 'Absent').length;
-    int late = displayData.where((e) => e['status'] == 'Late').length;
-    int excused = displayData.where((e) => e['status'] == 'Excused').length;
-
-    // Simple Percentage Calculation (Present + Late counts as attending)
-    double attendanceRate = total == 0 ? 0 : ((present + late) / total) * 100;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       body: Column(
         children: [
-          // --- HEADER SECTION ---
+          // Header
           Container(
             padding: const EdgeInsets.only(
               top: 60,
@@ -126,308 +253,525 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "Attendance History",
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Attendance Summary",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "Sem 1, 2025/2026",
+                      style: GoogleFonts.lato(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  "Showing: $_selectedFilter",
-                  style: GoogleFonts.lato(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 20),
-
-                // DYNAMIC STATS ROW (SCROLLABLE)
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildStatCard(
-                        "Rate",
-                        "${attendanceRate.toStringAsFixed(0)}%",
-                        Icons.pie_chart,
-                        Colors.purple,
-                      ),
-                      const SizedBox(width: 12),
-                      _buildStatCard(
-                        "Present",
-                        "$present",
-                        Icons.check_circle,
-                        Colors.green,
-                      ),
-                      const SizedBox(width: 12),
-                      _buildStatCard(
-                        "Late",
-                        "$late",
-                        Icons.access_time,
-                        Colors.orange,
-                      ),
-                      const SizedBox(width: 12),
-                      _buildStatCard(
-                        "Excused",
-                        "$excused",
-                        Icons.info_outline,
-                        Colors.blue,
-                      ),
-                      const SizedBox(width: 12),
-                      _buildStatCard(
-                        "Absent",
-                        "$absent",
-                        Icons.cancel,
-                        Colors.red,
-                      ),
-                    ],
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: const Icon(Icons.bar_chart, color: Colors.white),
                 ),
               ],
             ),
           ),
-
-          // --- FILTER CHIPS ---
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 10),
-            height: 40,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              scrollDirection: Axis.horizontal,
-              itemCount: _filterOptions.length,
-              // ignore: unnecessary_underscores
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
+          // List
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+              itemCount: _groupedData.keys.length,
               itemBuilder: (context, index) {
-                String filter = _filterOptions[index];
-                bool isSelected = _selectedFilter == filter;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedFilter = filter),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.purple.shade700 : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: isSelected
-                          ? null
-                          : Border.all(color: Colors.grey.shade300),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                // ignore: deprecated_member_use
-                                color: Colors.purple.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Center(
-                      child: Text(
-                        filter,
-                        style: GoogleFonts.lato(
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
+                String subjectName = _groupedData.keys.elementAt(index);
+                var stats = _subjectStats[subjectName]!;
+                return _buildSubjectSummaryCard(
+                  subjectName,
+                  stats,
+                  _groupedData[subjectName]!,
                 );
               },
             ),
           ),
-
-          // --- HISTORY LIST ---
-          Expanded(
-            child: displayData.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    // Padding Bottom 120 ensures the floating nav bar never hides the last item
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
-                    itemCount: displayData.length,
-                    itemBuilder: (context, index) {
-                      final record = displayData[index];
-                      return _buildHistoryTile(record);
-                    },
-                  ),
-          ),
         ],
       ),
     );
   }
 
-  // --- WIDGETS ---
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.history_toggle_off, size: 60, color: Colors.grey.shade300),
-          const SizedBox(height: 10),
-          Text(
-            "No records found for this period",
-            style: GoogleFonts.poppins(color: Colors.grey.shade500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
+  Widget _buildSubjectSummaryCard(
+    String title,
+    Map<String, dynamic> stats,
+    List<Map<String, dynamic>> history,
   ) {
-    return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(vertical: 15),
-      decoration: BoxDecoration(
-        // ignore: deprecated_member_use
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        // ignore: deprecated_member_use
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: color == Colors.white ? Colors.white : Colors.white,
-            size: 24,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+    List<String> parts = title.split('-');
+    String code = parts[0].trim();
+    String name = parts.length > 1 ? parts[1].trim() : "";
+    var midStats = stats['midSem'];
+    var allStats = stats['overall'];
+    // ignore: unused_local_variable
+    Color themeColor = stats['mainColor'];
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SubjectDetailPage(
+              subjectTitle: title,
+              historyData: history,
+              fullStats: stats,
             ),
           ),
-          Text(
-            label,
-            style: GoogleFonts.lato(color: Colors.white70, fontSize: 12),
-          ),
-        ],
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              // ignore: deprecated_member_use
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        code,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        name,
+                        style: GoogleFonts.lato(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: Colors.grey.shade300,
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMiniStat(
+                    "Mid-Sem (W1-7)",
+                    midStats['percent'],
+                    midStats['color'],
+                    midStats['status'],
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.grey.shade200,
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                ),
+                Expanded(
+                  child: _buildMiniStat(
+                    "Overall (W1-14)",
+                    allStats['percent'],
+                    allStats['color'],
+                    allStats['status'],
+                  ),
+                ),
+              ],
+            ),
+            if (midStats['letterAction'].isNotEmpty ||
+                allStats['letterAction'].isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.red.shade100),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      size: 14,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      allStats['letterAction'].isNotEmpty
+                          ? allStats['letterAction']
+                          : midStats['letterAction'],
+                      style: GoogleFonts.lato(
+                        fontSize: 11,
+                        color: Colors.red.shade800,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHistoryTile(Map<String, dynamic> record) {
-    String status = record['status'];
-    Color statusColor;
-    IconData statusIcon;
+  Widget _buildMiniStat(
+    String label,
+    double percent,
+    Color color,
+    String status,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.lato(fontSize: 10, color: Colors.grey)),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Text(
+              "${percent.toInt()}%",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
+                // ignore: deprecated_member_use
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                status,
+                style: GoogleFonts.lato(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
-    switch (status) {
-      case 'Present':
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle_outline;
-        break;
-      case 'Late':
-        statusColor = Colors.orange;
-        statusIcon = Icons.access_time;
-        break;
-      case 'Absent':
-        statusColor = Colors.red;
-        statusIcon = Icons.highlight_off;
-        break;
-      case 'Excused':
-        statusColor = Colors.blue;
-        statusIcon = Icons.info_outline;
-        break;
-      default:
-        statusColor = Colors.grey;
-        statusIcon = Icons.help_outline;
-    }
+// =========================================================
+// PAGE 2: DETAIL HISTORY PAGE
+// =========================================================
+class SubjectDetailPage extends StatefulWidget {
+  final String subjectTitle;
+  final List<Map<String, dynamic>> historyData;
+  final Map<String, dynamic> fullStats;
 
-    String dateStr = DateFormat('MMM d, y').format(record['date']);
-    String dayStr = DateFormat('EEE').format(record['date']);
+  const SubjectDetailPage({
+    super.key,
+    required this.subjectTitle,
+    required this.historyData,
+    required this.fullStats,
+  });
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  @override
+  State<SubjectDetailPage> createState() => _SubjectDetailPageState();
+}
+
+class _SubjectDetailPageState extends State<SubjectDetailPage> {
+  int _selectedView = 1;
+
+  // --- UPDATED: FIXED UPLOAD OPTIONS (NO OVERFLOW) ---
+  void _showUploadOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Prevents keyboard overflow issues too
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Row(
+      builder: (BuildContext context) {
+        return SafeArea(
+          // SafeArea prevents bottom navigation bar overlap
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // THIS FIXES THE 2 PIXEL OVERFLOW
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Attach MC Letter",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.camera_alt, color: Colors.blue),
+                  ),
+                  title: Text(
+                    "Take Photo",
+                    style: GoogleFonts.lato(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () => Navigator.pop(context),
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.photo_library,
+                      color: Colors.purple,
+                    ),
+                  ),
+                  title: Text(
+                    "Choose from Gallery",
+                    style: GoogleFonts.lato(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () => Navigator.pop(context),
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.folder, color: Colors.orange),
+                  ),
+                  title: Text(
+                    "Select File",
+                    style: GoogleFonts.lato(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var currentStats = _selectedView == 0
+        ? widget.fullStats['midSem']
+        : widget.fullStats['overall'];
+    Color themeColor = currentStats['color'];
+
+    List<Map<String, dynamic>> filteredHistory = widget.historyData.where((
+      record,
+    ) {
+      if (_selectedView == 0) return record['week'] <= 7;
+      return true;
+    }).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF0F2F5),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "Class History",
+          style: GoogleFonts.poppins(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: Column(
         children: [
-          // Date Box
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            width: double.infinity,
+            margin: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                // ignore: deprecated_member_use
+                colors: [themeColor, themeColor.withOpacity(0.7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  // ignore: deprecated_member_use
+                  color: themeColor.withOpacity(0.4),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               children: [
                 Text(
-                  dayStr,
-                  style: GoogleFonts.lato(
-                    color: Colors.grey.shade500,
-                    fontSize: 12,
+                  widget.subjectTitle,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  DateFormat('d').format(record['date']),
-                  style: GoogleFonts.poppins(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    // ignore: deprecated_member_use
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    "${currentStats['attended']} / ${currentStats['total']} Attended",
+                    style: GoogleFonts.lato(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
 
-          // Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 25),
+            height: 45,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(25),
+            ),
+            child: Stack(
               children: [
-                Text(
-                  record['title'],
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
+                AnimatedAlign(
+                  alignment: _selectedView == 0
+                      ? Alignment.centerLeft
+                      : Alignment.centerRight,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.5,
+                    child: Container(
+                      margin: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            // ignore: deprecated_member_use
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.access_time, size: 12, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      record['time'],
-                      style: GoogleFonts.lato(fontSize: 12, color: Colors.grey),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedView = 0),
+                        child: Container(
+                          color: Colors.transparent,
+                          alignment: Alignment.center,
+                          child: Text(
+                            "Week 1-7",
+                            style: GoogleFonts.lato(
+                              fontWeight: FontWeight.bold,
+                              color: _selectedView == 0
+                                  ? Colors.black87
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      dateStr,
-                      style: GoogleFonts.lato(fontSize: 12, color: Colors.grey),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedView = 1),
+                        child: Container(
+                          color: Colors.transparent,
+                          alignment: Alignment.center,
+                          child: Text(
+                            "Overall (W1-14)",
+                            style: GoogleFonts.lato(
+                              fontWeight: FontWeight.bold,
+                              color: _selectedView == 1
+                                  ? Colors.black87
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -435,27 +779,135 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
             ),
           ),
 
-          // Status Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              // ignore: deprecated_member_use
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                Icon(statusIcon, size: 14, color: statusColor),
-                const SizedBox(width: 4),
-                Text(
-                  status,
-                  style: GoogleFonts.poppins(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+          const SizedBox(height: 15),
+
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              itemCount: filteredHistory.length,
+              itemBuilder: (context, index) {
+                final record = filteredHistory[index];
+                bool isAbsent = record['status'] == 'Absent';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 16,
                   ),
-                ),
-              ],
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border(
+                      left: BorderSide(
+                        color: isAbsent ? Colors.red : Colors.green,
+                        width: 4,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            "WEEK",
+                            style: GoogleFonts.lato(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            "${record['week']}",
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        height: 30,
+                        width: 1,
+                        color: Colors.grey.shade200,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              DateFormat('EEEE, d MMM').format(record['date']),
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              record['time'],
+                              style: GoogleFonts.lato(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            isAbsent ? "ABSENT" : "PRESENT",
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isAbsent ? Colors.red : Colors.green,
+                            ),
+                          ),
+                          if (isAbsent) ...[
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () => _showUploadOptions(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: Colors.blue.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.upload_file_rounded,
+                                      size: 12,
+                                      color: Colors.blue,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "Attach MC",
+                                      style: GoogleFonts.lato(
+                                        fontSize: 10,
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
