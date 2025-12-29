@@ -3,12 +3,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 // --- IMPORTS ---
-import 'welcome.dart'; // Required for Logout
 import 'fade_page_route.dart';
 import 'staff_attendance_monitor_page.dart';
 import 'staff_schedule_page.dart';
 import 'staff_reports_page.dart';
 import 'staff_profile_page.dart';
+import 'staff_consultation_page.dart';
+import 'staff_broadcast_page.dart';
+import 'staff_approvals_page.dart';
+// ignore: unused_import
+import 'welcome.dart';
 
 class StaffHomePage extends StatefulWidget {
   const StaffHomePage({super.key});
@@ -24,7 +28,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FA),
-      resizeToAvoidBottomInset: false, // Prevents resizing when keyboard opens
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // 1. HEADER BACKGROUND
@@ -57,21 +61,12 @@ class _StaffHomePageState extends State<StaffHomePage> {
             ],
           ),
 
-          // 3. FLOATING NAV BAR (Positioned at bottom)
+          // 3. FLOATING NAV BAR
           Positioned(
             bottom: 20,
             left: 20,
             right: 20,
             child: _buildWhiteNavBar(),
-          ),
-
-          // 4. FLOATING ACTION BUTTON (Manual Position to prevent moving)
-          // Placing it here in the Stack ensures SnackBars don't push it up.
-          Positioned(
-            bottom: 45, // Aligns perfectly with the Nav Bar curve
-            left: 0,
-            right: 0,
-            child: Center(child: _buildCenterFab()),
           ),
         ],
       ),
@@ -118,28 +113,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
                           ),
                         ],
                       ),
-                      // Logout Button
-                      Container(
-                        decoration: BoxDecoration(
-                          // ignore: deprecated_member_use
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.logout_rounded,
-                            color: Colors.white,
-                          ),
-                          tooltip: "Logout",
-                          onPressed: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              FadePageRoute(page: const WelcomeScreen()),
-                              (route) => false,
-                            );
-                          },
-                        ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -165,7 +138,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // SECTION TITLE
                 Text(
                   "Action Required",
                   style: GoogleFonts.poppins(
@@ -191,18 +163,19 @@ class _StaffHomePageState extends State<StaffHomePage> {
                       Colors.indigo,
                       () => Navigator.push(
                         context,
-                        FadePageRoute(
-                          page: const StaffAttendanceMonitorPage(
-                            className: "CSCI 4333 - Cryptography",
-                          ),
-                        ),
+                        FadePageRoute(page: const StaffAttendanceMonitorPage()),
                       ),
                     ),
                     _buildQuickAction(
                       Icons.people_alt_outlined,
                       "Consultation",
                       Colors.orange,
-                      () => _showSnackBar("Opening Consultation Schedule..."),
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StaffConsultationPage(),
+                        ),
+                      ),
                     ),
                     _buildQuickAction(
                       Icons.assessment_outlined,
@@ -214,14 +187,19 @@ class _StaffHomePageState extends State<StaffHomePage> {
                       Icons.campaign_outlined,
                       "Broadcast",
                       Colors.pink,
-                      () => _showSnackBar("Create New Announcement..."),
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StaffBroadcastPage(),
+                        ),
+                      ),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 30),
 
-                // IMPORTANT NOTICES LIST
+                // IMPORTANT NOTICES
                 Text(
                   "Important Notices",
                   style: GoogleFonts.poppins(
@@ -257,127 +235,14 @@ class _StaffHomePageState extends State<StaffHomePage> {
   // --- WIDGET HELPER METHODS ---
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars(); // Clear previous
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        behavior: SnackBarBehavior.floating, // Floats above content
-        margin: const EdgeInsets.only(
-          bottom: 20,
-          left: 20,
-          right: 20,
-        ), // Custom positioning
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
         duration: const Duration(seconds: 1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  // --- NEW: PLUS BUTTON MENU ---
-  void _showQuickCreateMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                "Quick Create",
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildMenuOption(
-                icon: Icons.add_alarm_rounded,
-                color: Colors.blue,
-                title: "Start Instant Class",
-                subtitle: "Create an ad-hoc session immediately",
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSnackBar("Starting Instant Session...");
-                },
-              ),
-              _buildMenuOption(
-                icon: Icons.campaign_rounded,
-                color: Colors.orange,
-                title: "Post Announcement",
-                subtitle: "Notify students in your active classes",
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSnackBar("Creating Announcement...");
-                },
-              ),
-              _buildMenuOption(
-                icon: Icons.qr_code_2_rounded,
-                color: Colors.purple,
-                title: "Scan Student ID",
-                subtitle: "Verify a student manually via QR",
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSnackBar("Opening Scanner...");
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMenuOption({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      leading: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          // ignore: deprecated_member_use
-          color: color.withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: color, size: 24),
-      ),
-      title: Text(
-        title,
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: GoogleFonts.lato(color: Colors.grey.shade600, fontSize: 13),
-      ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: Colors.grey.shade300,
       ),
     );
   }
@@ -485,7 +350,12 @@ class _StaffHomePageState extends State<StaffHomePage> {
           ),
           InkWell(
             onTap: () {
-              _showSnackBar("Opening Approval Dashboard...");
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StaffApprovalsPage(),
+                ),
+              );
             },
             child: Container(
               width: double.infinity,
@@ -582,7 +452,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
         children: [
           _buildNavItem(Icons.dashboard_rounded, 0, "Home"),
           _buildNavItem(Icons.calendar_month_rounded, 1, "Schedule"),
-          const SizedBox(width: 50),
           _buildNavItem(Icons.analytics_rounded, 2, "Reports"),
           _buildNavItem(Icons.person_rounded, 3, "Profile"),
         ],
@@ -615,40 +484,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  // --- UPDATED FAB WITH ACTION ---
-  Widget _buildCenterFab() {
-    return Container(
-      height: 65,
-      width: 65,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2E006A), Color(0xFF4A00E0)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            // ignore: deprecated_member_use
-            color: const Color(0xFF4A00E0).withOpacity(0.4),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: _showQuickCreateMenu, // Calls the menu now
-          child: const Center(
-            child: Icon(Icons.add, size: 30, color: Colors.white),
-          ),
-        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class StaffSchedulePage extends StatefulWidget {
   const StaffSchedulePage({super.key});
@@ -9,9 +10,8 @@ class StaffSchedulePage extends StatefulWidget {
 }
 
 class _StaffSchedulePageState extends State<StaffSchedulePage> {
-  // 1. STATE FOR SELECTED DAY
-  String _selectedDay = "MON";
-  final List<String> _days = ["MON", "TUE", "WED", "THU", "FRI"];
+  // 1. STATE FOR SELECTED DATE
+  DateTime _selectedDate = DateTime.now();
 
   // 2. MOCK DATA
   final Map<String, List<Map<String, dynamic>>> _scheduleData = {
@@ -44,7 +44,6 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
         "startTime": "02:00 PM",
         "endTime": "05:00 PM",
         "title": "Student Consultation",
-        //"subtitle": "Email me for an appointment",
         "type": "Consultation",
         "location": "Office / Online",
         "isEmailAction": true,
@@ -103,7 +102,6 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
         "startTime": "02:00 PM",
         "endTime": "05:00 PM",
         "title": "Student Consultation",
-        //"subtitle": "Email me for an appointment",
         "type": "Consultation",
         "location": "Office",
         "isEmailAction": true,
@@ -145,7 +143,6 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
         "startTime": "02:00 PM",
         "endTime": "05:00 PM",
         "title": "Student Consultation",
-        //"subtitle": "Email me for an appointment",
         "type": "Consultation",
         "location": "Office",
         "isEmailAction": true,
@@ -153,92 +150,173 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
     ],
   };
 
+  void _changeDate(int days) {
+    setState(() {
+      _selectedDate = _selectedDate.add(Duration(days: days));
+    });
+  }
+
+  void _returnToToday() {
+    setState(() {
+      _selectedDate = DateTime.now();
+    });
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> dailyEvents = _scheduleData[_selectedDay] ?? [];
+    // Map current date to generic weekday key (e.g., "MON")
+    String dayKey = DateFormat('E').format(_selectedDate).toUpperCase();
+    List<Map<String, dynamic>> dailyEvents = _scheduleData[dayKey] ?? [];
+    bool isToday = _isToday(_selectedDate);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA), // Clean Light Background
+      backgroundColor: const Color(0xFFF6F8FA),
       body: Column(
         children: [
-          // --- 1. HEADER & DAY SELECTOR ---
+          // --- 1. HEADER & DATE NAVIGATOR ---
           Container(
-            padding: const EdgeInsets.only(top: 60, bottom: 20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF1A0038), // Deep Midnight Purple
-                  Color(0xFF4A00E0), // Royal Purple
-                ],
+            padding: const EdgeInsets.only(
+              top: 60,
+              bottom: 40,
+              left: 20,
+              right: 20,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1A0038), Color(0xFF4A00E0)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(40),
                 bottomRight: Radius.circular(40),
               ),
-              boxShadow: [
-                BoxShadow(
-                  // ignore: deprecated_member_use
-                  color: const Color(0xFF4A00E0).withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Weekly Schedule",
-                  style: GoogleFonts.poppins(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                // Top Row: Title Only (Logout Removed)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Welcome Back,",
+                      style: GoogleFonts.lato(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      "My Schedule",
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                // Horizontal Day Selector
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: _days.map((day) {
-                      bool isSelected = _selectedDay == day;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedDay = day),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.only(right: 12),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white
-                                // ignore: deprecated_member_use
-                                : Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            day,
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              color: isSelected
-                                  ? const Color(0xFF4A00E0)
-                                  : Colors.white70,
-                            ),
+
+                const SizedBox(height: 30),
+
+                // Date Navigator Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      onPressed: () => _changeDate(-1),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        Text(
+                          DateFormat('EEEE').format(_selectedDate),
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
+                        Text(
+                          DateFormat('MMMM d, y').format(_selectedDate),
+                          style: GoogleFonts.lato(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      onPressed: () => _changeDate(1),
+                      icon: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
 
-          // --- 2. TIMELINE LIST ---
+          // --- 2. CONDITIONAL "RETURN TO TODAY" BUTTON ---
+          if (!isToday) ...[
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: _returnToToday,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      // ignore: deprecated_member_use
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.refresh_rounded,
+                      size: 16,
+                      color: Color(0xFF4A00E0),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Return to Today",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF4A00E0),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
+          // --- 3. TIMELINE LIST ---
           Expanded(
             child: dailyEvents.isEmpty
                 ? _buildEmptyState()
@@ -257,33 +335,62 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
 
   // --- WIDGETS ---
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.purple.shade50,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.weekend_rounded, // Sofa icon substitute
+              size: 50,
+              color: Colors.purple.shade200,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "No Classes",
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            "Enjoy your rest day!",
+            style: GoogleFonts.lato(color: Colors.grey.shade400),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTimelineCard(Map<String, dynamic> event) {
-    // Determine Color Theme based on Type
     Color accentColor;
     Color bgColor;
-    // ignore: unused_local_variable
-    IconData icon;
 
     switch (event['type']) {
       case 'Class':
-        accentColor = const Color(0xFF4A00E0); // Royal Purple
+        accentColor = const Color(0xFF4A00E0);
         bgColor = Colors.white;
-        icon = Icons.class_outlined;
         break;
       case 'Meeting':
-        accentColor = Colors.orange.shade800; // Orange
+        accentColor = Colors.orange.shade800;
         bgColor = Colors.orange.shade50;
-        icon = Icons.groups_outlined;
         break;
       case 'Consultation':
-        accentColor = const Color(0xFFFF5C8D); // Pink
-        bgColor = const Color(0xFFFFF0F5); // Light Pink
-        icon = Icons.chat_bubble_outline;
+        accentColor = const Color(0xFFFF5C8D);
+        bgColor = const Color(0xFFFFF0F5);
         break;
       default:
         accentColor = Colors.grey;
         bgColor = Colors.white;
-        icon = Icons.event;
     }
 
     return IntrinsicHeight(
@@ -355,7 +462,6 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                       offset: const Offset(0, 4),
                     ),
                   ],
-                  // Left accent border
                   border: Border(
                     left: BorderSide(color: accentColor, width: 4),
                   ),
@@ -363,7 +469,6 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title Row
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -392,8 +497,6 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                           ),
                       ],
                     ),
-
-                    // Subtitle (if any)
                     if (event['subtitle'] != null) ...[
                       const SizedBox(height: 4),
                       Text(
@@ -405,10 +508,7 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 10),
-
-                    // Footer Info
                     Row(
                       children: [
                         Icon(
@@ -450,30 +550,6 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.weekend, size: 60, color: Colors.grey.shade300),
-          const SizedBox(height: 15),
-          Text(
-            "No Schedule",
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade400,
-            ),
-          ),
-          Text(
-            "Enjoy your day off!",
-            style: GoogleFonts.lato(color: Colors.grey.shade400),
           ),
         ],
       ),

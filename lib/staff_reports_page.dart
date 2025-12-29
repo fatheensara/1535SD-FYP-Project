@@ -44,7 +44,7 @@ class StaffReportsPage extends StatelessWidget {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          "My Subjects",
+          "Subject Reports",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: Colors.white,
