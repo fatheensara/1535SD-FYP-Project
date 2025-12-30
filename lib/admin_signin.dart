@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'admin_forgot_password_page.dart';
-import 'admin_home.dart';
-import 'admin_hello.dart'; // <--- Added for navigation
+import 'screens/admin_registration_screen.dart';
+import 'admin_hello.dart'; // 
 import 'fade_page_route.dart';
 
 class AdminSignInPage extends StatefulWidget {
@@ -16,6 +16,20 @@ class AdminSignInPage extends StatefulWidget {
 
 class _AdminSignInPageState extends State<AdminSignInPage> {
   bool _isPasswordObscured = true;
+
+  static const _glassDecoration = BoxDecoration(
+    color: Color(0x33000000), // Semi-transparent black
+    borderRadius: BorderRadius.all(Radius.circular(25)),
+    border: Border.fromBorderSide(BorderSide(
+      color: Color(0x33FFFFFF), // Semi-transparent white
+      width: 1,
+    )),
+  );
+  
+  static const _textFieldDecoration = InputDecoration(
+    border: InputBorder.none,
+    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +182,7 @@ class _AdminSignInPageState extends State<AdminSignInPage> {
                                 onPressed: () {
                                   Navigator.pushAndRemoveUntil(
                                     context,
-                                    FadePageRoute(page: const AdminHomePage()),
+                                    FadePageRoute(page: const AdminRegistrationScreen()),
                                     (route) => false,
                                   );
                                 },
