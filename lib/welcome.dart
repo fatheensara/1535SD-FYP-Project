@@ -225,9 +225,8 @@ class WelcomeScreen extends StatelessWidget {
         ],
       ),
       child: Center(
-        // *** CHANGED ICON HERE ***
         child: Icon(
-          Icons.nfc_rounded, // Replaced Fingerprint with NFC
+          Icons.nfc_rounded,
           size: 60,
           // ignore: deprecated_member_use
           color: Colors.white.withOpacity(0.9),
