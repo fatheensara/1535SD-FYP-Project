@@ -36,7 +36,7 @@ class StudentHelloPage extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // 1. BACKGROUND
+          // 1. BACKGROUND (The nice gradient with blobs)
           _buildBackground(context),
 
           // 2. CONTENT
@@ -47,13 +47,13 @@ class StudentHelloPage extends StatelessWidget {
 
                 // --- HERO SECTION ---
                 _buildHeroIcon(),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
 
-                // Title Text
+                // Title Text (Updated to your App Name)
                 Text(
-                  "Student Portal",
+                  "AttenDID",
                   style: GoogleFonts.poppins(
-                    fontSize: 32,
+                    fontSize: 42, // Slightly larger for the brand name
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                     shadows: [
@@ -66,12 +66,13 @@ class StudentHelloPage extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
                 Text(
-                  "Manage attendance & track classes",
+                  "Smart Attendance System",
                   style: GoogleFonts.lato(
                     fontSize: 16,
                     color: Colors.white70,
-                    letterSpacing: 0.5,
+                    letterSpacing: 1.2,
                   ),
                 ),
 
