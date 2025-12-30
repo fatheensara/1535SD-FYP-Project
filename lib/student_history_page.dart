@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // =========================================================
-// PAGE 1: MAIN SUMMARY PAGE
+// PAGE 1: HYBRID HISTORY PAGE (REAL + MOCK FALLBACK)
 // =========================================================
 class StudentHistoryPage extends StatefulWidget {
   const StudentHistoryPage({super.key});
@@ -13,227 +15,141 @@ class StudentHistoryPage extends StatefulWidget {
 }
 
 class _StudentHistoryPageState extends State<StudentHistoryPage> {
-  // Data holder
-  Map<String, List<Map<String, dynamic>>> _groupedData = {};
-  final Map<String, Map<String, dynamic>> _subjectStats = {};
+  
+  // --- 1. REAL DATA CALCULATOR ---
+  Map<String, dynamic> _calculateRealStats(List<QueryDocumentSnapshot> docs) {
+    Map<String, List<Map<String, dynamic>>> groupedData = {};
 
-  @override
-  void initState() {
-    super.initState();
-    _generateMockData();
+    // Group by Subject
+    for (var doc in docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      String subject = data['courseName'] ?? "Unknown Subject";
+      
+      if (!groupedData.containsKey(subject)) {
+        groupedData[subject] = [];
+      }
+
+      groupedData[subject]!.add({
+        'date': (data['timestamp'] as Timestamp).toDate(),
+        'status': data['status'] ?? 'Absent',
+        'week': _calculateWeek((data['timestamp'] as Timestamp).toDate()),
+        'time': DateFormat('h:mm a').format((data['timestamp'] as Timestamp).toDate()), // Add Time
+      });
+    }
+
+    return _processGroupedData(groupedData);
   }
 
-  // --- MOCK DATA GENERATOR ---
-  void _generateMockData() {
+  // --- 2. MOCK DATA GENERATOR (FALLBACK) ---
+  Map<String, dynamic> _generateMockStats() {
     DateTime semStart = DateTime(2025, 10, 6);
+    Map<String, List<Map<String, dynamic>>> groupedData = {};
 
-    // Helper function
-    List<Map<String, dynamic>> generateClassDates(
-      String title,
-      String time,
-      int dayOfWeek1, // 1=Mon, 2=Tue...
-      int dayOfWeek2, // If -1, only 1 class/week
-      List<bool> attendancePattern, {
-      int maxWeeks = 14,
-    }) {
+    // Helper to generate dates
+    List<Map<String, dynamic>> generateClassDates(String title, String time, int d1, int d2, List<bool> pattern) {
       List<Map<String, dynamic>> classes = [];
-      int patternIndex = 0;
-
-      for (int week = 0; week < maxWeeks; week++) {
+      int pIndex = 0;
+      for (int week = 0; week < 14; week++) {
         DateTime weekStart = semStart.add(Duration(days: week * 7));
-
-        // Class 1
-        DateTime class1Date = weekStart.add(Duration(days: dayOfWeek1 - 1));
-        if (patternIndex < attendancePattern.length) {
-          bool isPresent = attendancePattern[patternIndex];
+        
+        // Day 1
+        if (pIndex < pattern.length) {
           classes.add({
-            "date": class1Date,
-            "title": title,
-            "time": time,
-            "status": isPresent ? "Present" : "Absent",
+            "date": weekStart.add(Duration(days: d1 - 1)),
+            "status": pattern[pIndex] ? "Present" : "Absent",
             "week": week + 1,
+            "time": time,
           });
-          patternIndex++;
+          pIndex++;
         }
-
-        // Class 2 (Only if dayOfWeek2 is not -1)
-        if (dayOfWeek2 != -1) {
-          DateTime class2Date = weekStart.add(Duration(days: dayOfWeek2 - 1));
-          if (patternIndex < attendancePattern.length) {
-            bool isPresent = attendancePattern[patternIndex];
-            classes.add({
-              "date": class2Date,
-              "title": title,
-              "time": time,
-              "status": isPresent ? "Present" : "Absent",
-              "week": week + 1,
-            });
-            patternIndex++;
-          }
+        // Day 2
+        if (d2 != -1 && pIndex < pattern.length) {
+          classes.add({
+            "date": weekStart.add(Duration(days: d2 - 1)),
+            "status": pattern[pIndex] ? "Present" : "Absent",
+            "week": week + 1,
+            "time": time,
+          });
+          pIndex++;
         }
       }
+      // Sort descending (newest first)
       classes.sort((a, b) => b['date'].compareTo(a['date']));
       return classes;
     }
 
-    // --- SCENARIO 1: CSCI 4300 (Warning Mid-Sem -> Good Overall) ---
-    final List<bool> pattern1 = List.filled(28, true);
-    pattern1[2] = false; // Absent W2
-    pattern1[5] = false; // Absent W3
-    pattern1[8] = false; // Absent W5 (Total 3 absences in first 7 weeks)
+    // Mock Scenario: Warning Letter
+    final List<bool> patternWarning = List.filled(28, true);
+    patternWarning[2] = false; patternWarning[5] = false; patternWarning[8] = false; // 3 Absences
+    groupedData["CSCI 4300 - Computation"] = generateClassDates("CSCI 4300", "10:00 AM", 1, 3, patternWarning);
 
-    var sub1 = generateClassDates(
-      "CSCI 4300 - Computation and Complexity",
-      "10:00 AM",
-      1,
-      3,
-      pattern1, // Mon & Wed
-    );
+    // Mock Scenario: Perfect Attendance
+    groupedData["CSCI 4402 - Final Year Project II"] = generateClassDates("CSCI 4402", "11:30 AM", 1, -1, List.filled(14, true));
 
-    // --- SCENARIO 2: CSCI 4332 (DEF) ---
-    final List<bool> patternDEF = List.filled(28, true);
-    // Student starts skipping in Week 9, 10, 11
-    patternDEF[16] = false;
-    patternDEF[17] = false;
-    patternDEF[18] = false;
-    patternDEF[19] = false;
-    patternDEF[20] = false;
-    patternDEF[21] = false;
-    patternDEF[25] = false;
-
-    var subDEF = generateClassDates(
-      "CSCI 4332 - Digital Evidence Forensics",
-      "11:30 AM",
-      2,
-      4,
-      patternDEF, // Tue & Thu
-    );
-
-    // Other Subjects (Standard)
-    final List<bool> patternGood = List.filled(28, true);
-    var subFYP = generateClassDates(
-      "CSCI 4402 - Final Year Project II",
-      "11:30 AM",
-      1,
-      4,
-      patternGood,
-    );
-
+    // Mock Scenario: Barred
     final List<bool> patternBarred = List.filled(28, true);
-    // ignore: curly_braces_in_flow_control_structures
-    for (int i = 0; i < 8; i++) patternBarred[i * 3] = false; // Barred
-    var subNetSec = generateClassDates(
-      "CSCI 4336 - Network Security",
-      "02:00 PM",
-      2,
-      5,
-      patternBarred,
-    );
+    for(int i=0; i<8; i++) patternBarred[i*3] = false; // Many absences
+    groupedData["CSCI 4336 - Network Security"] = generateClassDates("CSCI 4336", "02:00 PM", 2, 4, patternBarred);
 
-    var subCrypto = generateClassDates(
-      "CSCI 4333 - Cryptography",
-      "02:00 PM",
-      1,
-      3,
-      patternGood,
-    );
+    return _processGroupedData(groupedData);
+  }
 
-    _groupedData = {
-      "CSCI 4300 - Computation and Complexity": sub1,
-      "CSCI 4332 - Digital Evidence Forensics": subDEF,
-      "CSCI 4402 - Final Year Project II": subFYP,
-      "CSCI 4336 - Network Security": subNetSec,
-      "CSCI 4333 - Cryptography": subCrypto,
-    };
+  // --- 3. SHARED PROCESSOR (CALCULATES %) ---
+  Map<String, dynamic> _processGroupedData(Map<String, List<Map<String, dynamic>>> groupedData) {
+    Map<String, Map<String, dynamic>> finalStats = {};
 
-    // --- CALCULATE STATS ---
-    _groupedData.forEach((subject, records) {
-      // 1. Calculate Mid-Sem Stats
-      var midRecords = records.where((e) => e['week'] <= 7).toList();
-      int midTotal = midRecords.length;
-      int midAttended = midRecords
-          .where((e) => e['status'] == 'Present')
-          .length;
-      double midPercent = midTotal == 0 ? 0 : (midAttended / midTotal) * 100;
+    groupedData.forEach((subject, records) {
+      int total = records.length;
+      int attended = records.where((e) => e['status'] == 'Present' || e['status'] == 'Late').length;
+      double percent = total == 0 ? 0 : (attended / total) * 100;
 
-      String midStatus = "GOOD";
-      Color midColor = Colors.green;
-      String midLetter = "";
+      String statusText = "GOOD";
+      Color statusColor = Colors.green;
+      String letterAction = "";
 
-      if (midPercent < 80) {
-        midStatus = "WARNING";
-        midColor = Colors.orange;
-        midLetter = "Warning Letter Issued";
-      }
-
-      // 2. Calculate Overall Stats
-      var allRecords = records;
-      int allTotal = allRecords.length;
-      int allAttended = allRecords
-          .where((e) => e['status'] == 'Present')
-          .length;
-      double allPercent = allTotal == 0 ? 0 : (allAttended / allTotal) * 100;
-
-      String allStatus = "GOOD";
-      Color allColor = Colors.green;
-      String allLetter = "";
-
-      // Logic: No Warning = No Barred
-      if (allPercent < 80) {
-        if (midPercent >= 80) {
-          allStatus = "ATTENTION";
-          allColor = Colors.amber.shade700;
-          allLetter = "";
+      if (percent < 80) {
+        if (percent < 60) {
+          statusText = "BARRED";
+          statusColor = Colors.red;
+          letterAction = "Barred Letter Issued";
         } else {
-          allStatus = "BARRED";
-          allColor = Colors.redAccent;
-          allLetter = "Barred Letter Issued";
+          statusText = "WARNING";
+          statusColor = Colors.orange;
+          letterAction = "Warning Letter Issued";
         }
-      } else if (midPercent < 80 && allPercent >= 80) {
-        allStatus = "GOOD";
-        allColor = Colors.green;
       }
 
-      _subjectStats[subject] = {
-        'midSem': {
-          'percent': midPercent,
-          'status': midStatus,
-          'color': midColor,
-          'letterAction': midLetter,
-          'total': midTotal,
-          'attended': midAttended,
-        },
-        'overall': {
-          'percent': allPercent,
-          'status': allStatus,
-          'color': allColor,
-          'letterAction': allLetter,
-          'total': allTotal,
-          'attended': allAttended,
-        },
-        'mainColor': allPercent < 80
-            ? allColor
-            : (midPercent < 80 ? Colors.orange : Colors.green),
+      finalStats[subject] = {
+        'percent': percent,
+        'status': statusText,
+        'color': statusColor,
+        'letterAction': letterAction,
+        'total': total,
+        'attended': attended,
+        'history': records, // The list of dates
       };
     });
 
-    setState(() {});
+    return finalStats;
+  }
+
+  int _calculateWeek(DateTime date) {
+    DateTime semStart = DateTime(2025, 10, 1);
+    int daysDiff = date.difference(semStart).inDays;
+    return (daysDiff / 7).ceil().clamp(1, 14); 
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       body: Column(
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.only(
-              top: 60,
-              left: 20,
-              right: 20,
-              bottom: 25,
-            ),
+            padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 25),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
@@ -245,12 +161,7 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
                 bottomRight: Radius.circular(30),
               ),
               boxShadow: [
-                BoxShadow(
-                  // ignore: deprecated_member_use
-                  color: const Color(0xFF4A00E0).withOpacity(0.4),
-                  blurRadius: 15,
-                  offset: const Offset(0, 10),
-                ),
+                BoxShadow(color: const Color(0xFF4A00E0).withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 10)),
               ],
             ),
             child: Row(
@@ -259,46 +170,69 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Attendance Summary",
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      "Sem 1, 2025/2026",
-                      style: GoogleFonts.lato(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
+                    Text("Attendance Summary", style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text("Sem 1, 2025/2026", style: GoogleFonts.lato(color: Colors.white70, fontSize: 14)),
                   ],
                 ),
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.bar_chart, color: Colors.white),
                 ),
               ],
             ),
           ),
-          // List
+
+          // Main Content
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-              itemCount: _groupedData.keys.length,
-              itemBuilder: (context, index) {
-                String subjectName = _groupedData.keys.elementAt(index);
-                var stats = _subjectStats[subjectName]!;
-                return _buildSubjectSummaryCard(
-                  subjectName,
-                  stats,
-                  _groupedData[subjectName]!,
+            child: StreamBuilder<QuerySnapshot>(
+              stream: (user != null) 
+                ? FirebaseFirestore.instance
+                    .collection('attendance_records')
+                    .where('studentUid', isEqualTo: user.uid)
+                    .snapshots()
+                : null,
+              builder: (context, snapshot) {
+                
+                // 1. DECIDE: REAL OR MOCK?
+                Map<String, dynamic> stats;
+                bool isUsingMock = false;
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  // NO REAL DATA -> SHOW MOCK
+                  stats = _generateMockStats();
+                  isUsingMock = true;
+                } else {
+                  // HAS REAL DATA -> SHOW REAL
+                  stats = _calculateRealStats(snapshot.data!.docs);
+                }
+
+                return Column(
+                  children: [
+                    // Mode Indicator (Optional, remove if you want it hidden)
+                    if(isUsingMock)
+                    Container(
+                      width: double.infinity,
+                      color: Colors.amber.shade100,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text("Demo Mode: Scanning a class will switch to Real Data", 
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.lato(fontSize: 10, color: Colors.brown)
+                      ),
+                    ),
+
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                        itemCount: stats.length,
+                        itemBuilder: (context, index) {
+                          String subject = stats.keys.elementAt(index);
+                          var data = stats[subject]!;
+                          return _buildSubjectSummaryCard(subject, data);
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -308,19 +242,10 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
     );
   }
 
-  Widget _buildSubjectSummaryCard(
-    String title,
-    Map<String, dynamic> stats,
-    List<Map<String, dynamic>> history,
-  ) {
-    List<String> parts = title.split('-');
-    String code = parts[0].trim();
-    String name = parts.length > 1 ? parts[1].trim() : "";
-    var midStats = stats['midSem'];
-    var allStats = stats['overall'];
-    // ignore: unused_local_variable
-    Color themeColor = stats['mainColor'];
-
+  Widget _buildSubjectSummaryCard(String title, Map<String, dynamic> data) {
+    // Clean up title (remove code if needed)
+    String displayTitle = title;
+    
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -328,8 +253,8 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
           MaterialPageRoute(
             builder: (context) => SubjectDetailPage(
               subjectTitle: title,
-              historyData: history,
-              fullStats: stats,
+              historyData: data['history'], // Pass specific history
+              stats: data,
             ),
           ),
         );
@@ -341,12 +266,7 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(
-              // ignore: deprecated_member_use
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -358,93 +278,46 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(displayTitle, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                      const SizedBox(height: 4),
                       Text(
-                        code,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        name,
-                        style: GoogleFonts.lato(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        "${data['attended']} / ${data['total']} Classes Attended", 
+                        style: GoogleFonts.lato(fontSize: 14, color: Colors.grey.shade600)
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: Colors.grey.shade300,
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: data['percent'] / 100,
+                      backgroundColor: Colors.grey.shade100,
+                      color: data['color'],
+                      strokeWidth: 6,
+                    ),
+                    Text("${data['percent'].toInt()}%", style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: data['color'])),
+                  ],
                 ),
               ],
             ),
             const SizedBox(height: 15),
             Row(
               children: [
-                Expanded(
-                  child: _buildMiniStat(
-                    "Mid-Sem (W1-7)",
-                    midStats['percent'],
-                    midStats['color'],
-                    midStats['status'],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.grey.shade200,
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                ),
-                Expanded(
-                  child: _buildMiniStat(
-                    "Overall (W1-14)",
-                    allStats['percent'],
-                    allStats['color'],
-                    allStats['status'],
-                  ),
-                ),
+                _buildMiniStat("Status", data['status'], data['color']),
               ],
             ),
-            if (midStats['letterAction'].isNotEmpty ||
-                allStats['letterAction'].isNotEmpty) ...[
+            if (data['letterAction'].isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 6,
-                  horizontal: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.red.shade100),
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.red.shade100)),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.warning_amber_rounded,
-                      size: 14,
-                      color: Colors.red,
-                    ),
+                    const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.red),
                     const SizedBox(width: 6),
-                    Text(
-                      allStats['letterAction'].isNotEmpty
-                          ? allStats['letterAction']
-                          : midStats['letterAction'],
-                      style: GoogleFonts.lato(
-                        fontSize: 11,
-                        color: Colors.red.shade800,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(data['letterAction'], style: GoogleFonts.lato(fontSize: 11, color: Colors.red.shade800, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -455,64 +328,33 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
     );
   }
 
-  Widget _buildMiniStat(
-    String label,
-    double percent,
-    Color color,
-    String status,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: GoogleFonts.lato(fontSize: 10, color: Colors.grey)),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Text(
-              "${percent.toInt()}%",
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: color,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-              decoration: BoxDecoration(
-                // ignore: deprecated_member_use
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                status,
-                style: GoogleFonts.lato(
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+  Widget _buildMiniStat(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+      child: Row(
+        children: [
+          Text("$label: ", style: GoogleFonts.lato(fontSize: 10, color: Colors.grey.shade700)),
+          Text(value, style: GoogleFonts.lato(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
     );
   }
 }
 
 // =========================================================
-// PAGE 2: DETAIL HISTORY PAGE
+// PAGE 2: DETAIL HISTORY PAGE (Reused)
 // =========================================================
 class SubjectDetailPage extends StatefulWidget {
   final String subjectTitle;
   final List<Map<String, dynamic>> historyData;
-  final Map<String, dynamic> fullStats;
+  final Map<String, dynamic> stats;
 
   const SubjectDetailPage({
     super.key,
     required this.subjectTitle,
     required this.historyData,
-    required this.fullStats,
+    required this.stats,
   });
 
   @override
@@ -520,88 +362,25 @@ class SubjectDetailPage extends StatefulWidget {
 }
 
 class _SubjectDetailPageState extends State<SubjectDetailPage> {
-  int _selectedView = 1;
-
-  // --- UPDATED: FIXED UPLOAD OPTIONS (NO OVERFLOW) ---
+  
   void _showUploadOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Prevents keyboard overflow issues too
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (BuildContext context) {
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
         return SafeArea(
-          // SafeArea prevents bottom navigation bar overlap
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-            child: Column(
-              mainAxisSize: MainAxisSize.min, // THIS FIXES THE 2 PIXEL OVERFLOW
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Wrap(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Attach MC Letter",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
                 ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.camera_alt, color: Colors.blue),
-                  ),
-                  title: Text(
-                    "Take Photo",
-                    style: GoogleFonts.lato(fontWeight: FontWeight.w600),
-                  ),
+                  leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.camera_alt, color: Colors.blue)),
+                  title: const Text("Take Photo"),
                   onTap: () => Navigator.pop(context),
                 ),
                 ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.photo_library,
-                      color: Colors.purple,
-                    ),
-                  ),
-                  title: Text(
-                    "Choose from Gallery",
-                    style: GoogleFonts.lato(fontWeight: FontWeight.w600),
-                  ),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.folder, color: Colors.orange),
-                  ),
-                  title: Text(
-                    "Select File",
-                    style: GoogleFonts.lato(fontWeight: FontWeight.w600),
-                  ),
+                  leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.photo_library, color: Colors.purple)),
+                  title: const Text("Choose from Gallery"),
                   onTap: () => Navigator.pop(context),
                 ),
               ],
@@ -614,17 +393,7 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    var currentStats = _selectedView == 0
-        ? widget.fullStats['midSem']
-        : widget.fullStats['overall'];
-    Color themeColor = currentStats['color'];
-
-    List<Map<String, dynamic>> filteredHistory = widget.historyData.where((
-      record,
-    ) {
-      if (_selectedView == 0) return record['week'] <= 7;
-      return true;
-    }).toList();
+    Color themeColor = widget.stats['color'];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
@@ -632,276 +401,78 @@ class _SubjectDetailPageState extends State<SubjectDetailPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          "Class History",
-          style: GoogleFonts.poppins(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87), onPressed: () => Navigator.pop(context)),
+        title: Text("Class History", style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold)),
       ),
       body: Column(
         children: [
+          // Banner
           Container(
             width: double.infinity,
             margin: const EdgeInsets.all(20),
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                // ignore: deprecated_member_use
-                colors: [themeColor, themeColor.withOpacity(0.7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: LinearGradient(colors: [themeColor, themeColor.withOpacity(0.7)]),
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  // ignore: deprecated_member_use
-                  color: themeColor.withOpacity(0.4),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: themeColor.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))],
             ),
             child: Column(
               children: [
-                Text(
-                  widget.subjectTitle,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(widget.subjectTitle, textAlign: TextAlign.center, style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    // ignore: deprecated_member_use
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    "${currentStats['attended']} / ${currentStats['total']} Attended",
-                    style: GoogleFonts.lato(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                  child: Text("${widget.stats['attended']} / ${widget.stats['total']} Attended", style: GoogleFonts.lato(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           ),
-
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 25),
-            height: 45,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Stack(
-              children: [
-                AnimatedAlign(
-                  alignment: _selectedView == 0
-                      ? Alignment.centerLeft
-                      : Alignment.centerRight,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.5,
-                    child: Container(
-                      margin: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            // ignore: deprecated_member_use
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedView = 0),
-                        child: Container(
-                          color: Colors.transparent,
-                          alignment: Alignment.center,
-                          child: Text(
-                            "Week 1-7",
-                            style: GoogleFonts.lato(
-                              fontWeight: FontWeight.bold,
-                              color: _selectedView == 0
-                                  ? Colors.black87
-                                  : Colors.grey.shade600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedView = 1),
-                        child: Container(
-                          color: Colors.transparent,
-                          alignment: Alignment.center,
-                          child: Text(
-                            "Overall (W1-14)",
-                            style: GoogleFonts.lato(
-                              fontWeight: FontWeight.bold,
-                              color: _selectedView == 1
-                                  ? Colors.black87
-                                  : Colors.grey.shade600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 15),
 
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              itemCount: filteredHistory.length,
+              itemCount: widget.historyData.length,
               itemBuilder: (context, index) {
-                final record = filteredHistory[index];
+                final record = widget.historyData[index];
                 bool isAbsent = record['status'] == 'Absent';
+                String dateStr = DateFormat('MMM d, y').format(record['date']);
+                String weekStr = "Week ${record['week']}";
+                String timeStr = record['time'] ?? "10:00 AM";
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 16,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border(
-                      left: BorderSide(
-                        color: isAbsent ? Colors.red : Colors.green,
-                        width: 4,
-                      ),
-                    ),
+                    border: Border(left: BorderSide(color: isAbsent ? Colors.red : Colors.green, width: 4)),
                   ),
                   child: Row(
                     children: [
                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "WEEK",
-                            style: GoogleFonts.lato(
-                              fontSize: 10,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Text(
-                            "${record['week']}",
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          Text(weekStr, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          Text(timeStr, style: GoogleFonts.lato(fontSize: 10, color: Colors.grey.shade400)),
                         ],
                       ),
                       const SizedBox(width: 16),
-                      Container(
-                        height: 30,
-                        width: 1,
-                        color: Colors.grey.shade200,
-                      ),
-                      const SizedBox(width: 16),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              DateFormat('EEEE, d MMM').format(record['date']),
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              record['time'],
-                              style: GoogleFonts.lato(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: Text(dateStr, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            isAbsent ? "ABSENT" : "PRESENT",
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: isAbsent ? Colors.red : Colors.green,
-                            ),
-                          ),
-                          if (isAbsent) ...[
-                            const SizedBox(height: 8),
+                          Text(record['status'].toUpperCase(), style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: isAbsent ? Colors.red : Colors.green)),
+                          if (isAbsent)
                             InkWell(
                               onTap: () => _showUploadOptions(context),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade50,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: Colors.blue.shade200,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.upload_file_rounded,
-                                      size: 12,
-                                      color: Colors.blue,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "Attach MC",
-                                      style: GoogleFonts.lato(
-                                        fontSize: 10,
-                                        color: Colors.blue,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text("Attach MC", style: GoogleFonts.lato(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ],
