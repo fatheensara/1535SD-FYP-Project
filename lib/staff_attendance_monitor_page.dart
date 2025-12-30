@@ -11,7 +11,7 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- MOCK DATA FOR CLASSES (Removed isActive) ---
+    // --- MOCK DATA FOR CLASSES ---
     final List<Map<String, dynamic>> classList = [
       {
         "code": "CSCI 2303",
@@ -61,7 +61,6 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              // ignore: deprecated_member_use
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
@@ -131,7 +130,6 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
   // --- WIDGET HELPER ---
 
   Widget _buildClassCard(BuildContext context, Map<String, dynamic> data) {
-    // Removed logic: bool isActive = data['isActive'] == true;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -140,13 +138,11 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 5),
           ),
         ],
-        // Removed border logic here
       ),
       child: Material(
         color: Colors.transparent,
@@ -187,7 +183,6 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                // Removed the "Green Strip" Container here
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,9 +200,7 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    // ignore: deprecated_member_use
                                     color: const Color(0xFF4A00E0)
-                                        // ignore: deprecated_member_use
                                         .withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
@@ -235,7 +228,6 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
                               ],
                             ),
                           ),
-                          // Removed the "LIVE NOW" Badge here
                         ],
                       ),
                       const SizedBox(height: 10),
