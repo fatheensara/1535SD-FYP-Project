@@ -31,12 +31,17 @@ class _StudentSecurityPageState extends State<StudentSecurityPage> {
         children: [
           _buildSectionTitle("Access Control"),
           _buildSwitchTile(
-            Icons.fingerprint,
-            "Biometric Login",
-            "Use FaceID or Fingerprint to sign in",
-            _biometricEnabled,
-            (val) => setState(() => _biometricEnabled = val),
-          ),
+          Icons.fingerprint,
+          "Biometric Login",
+          "Coming Soon", // Changed from "Use FaceID..."
+          false, // Force OFF
+          (val) {
+            // Show message instead of toggling
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Biometric features will be available in v2.0")),
+            );
+          },
+        ),
           _buildSwitchTile(
             Icons.lock_clock_outlined,
             "App Lock Timeout",
