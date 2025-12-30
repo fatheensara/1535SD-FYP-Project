@@ -58,7 +58,6 @@ class _StaffConsultationPageState extends State<StaffConsultationPage> {
 
   void _handleRequest(int index, bool accepted) {
     setState(() {
-      // For demo, just remove the item and show snackbar
       String name = _requests[index]['student'];
       _requests.removeAt(index);
 
@@ -96,7 +95,6 @@ class _StaffConsultationPageState extends State<StaffConsultationPage> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              // ignore: deprecated_member_use
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
@@ -212,13 +210,11 @@ class _StaffConsultationPageState extends State<StaffConsultationPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
-        // ignore: deprecated_member_use
         border: Border.all(color: Colors.orange.withOpacity(0.3)),
       ),
       child: Column(
@@ -262,7 +258,6 @@ class _StaffConsultationPageState extends State<StaffConsultationPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  // ignore: deprecated_member_use
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -337,7 +332,6 @@ class _StaffConsultationPageState extends State<StaffConsultationPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -350,7 +344,7 @@ class _StaffConsultationPageState extends State<StaffConsultationPage> {
           Column(
             children: [
               Text(
-                data['date'].split(',')[0], // Day (Wed)
+                data['date'].split(',')[0], 
                 style: GoogleFonts.lato(
                   fontSize: 12,
                   color: Colors.grey,
@@ -358,7 +352,7 @@ class _StaffConsultationPageState extends State<StaffConsultationPage> {
                 ),
               ),
               Text(
-                data['date'].split(' ')[1], // Date (25)
+                data['date'].split(' ')[1], 
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
