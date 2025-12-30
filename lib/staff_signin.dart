@@ -2,11 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// --- IMPORTS ---
 import 'staff_forgot_password_page.dart';
-import 'staff_home.dart';
-import 'staff_hello.dart';
+import 'staff_home.dart'; // Ensure this matches your home page file name
+import 'staff_hello.dart'; // <--- Added for navigation
 import 'fade_page_route.dart';
+import 'home_screen.dart'; 
 
 class StaffSignInPage extends StatefulWidget {
   const StaffSignInPage({super.key});
@@ -31,7 +31,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               // ignore: deprecated_member_use
-              color: Colors.white.withOpacity(0.2), // Lighter back button
+              color: Colors.white.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -41,6 +41,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
             ),
           ),
           onPressed: () {
+            // *** NAVIGATION UPDATE ***
             Navigator.pushReplacement(
               context,
               FadePageRoute(page: const StaffHelloPage()),
@@ -50,8 +51,10 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
       ),
       body: Stack(
         children: [
+          // 1. DARK BACKGROUND
           _buildBackground(),
 
+          // 2. GLASS CONTENT
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -60,23 +63,23 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                 children: [
                   const SizedBox(height: 60),
 
-                  // FLOATING LOGO ICON
+                  // Icon
                   Container(
                     height: 100,
                     width: 100,
                     decoration: BoxDecoration(
                       // ignore: deprecated_member_use
-                      color: Colors.white.withOpacity(0.15), // Light glass
+                      color: Colors.deepPurple.shade900.withOpacity(0.3),
                       shape: BoxShape.circle,
                       border: Border.all(
                         // ignore: deprecated_member_use
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withOpacity(0.1),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
                           // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withOpacity(0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -97,26 +100,19 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
                     ),
                   ),
                   Text(
                     "Sign in to manage attendance",
                     style: GoogleFonts.lato(
                       fontSize: 16,
-                      color: Colors.white70, // Lighter text
+                      color: Colors.white54,
                     ),
                   ),
 
                   const SizedBox(height: 40),
 
+                  // GLASS FORM
                   ClipRRect(
                     borderRadius: BorderRadius.circular(25),
                     child: BackdropFilter(
@@ -125,28 +121,19 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                         padding: const EdgeInsets.all(30),
                         decoration: BoxDecoration(
                           // ignore: deprecated_member_use
-                          color: Colors.white.withOpacity(
-                            0.1,
-                          ), // Light Glass Container
+                          color: Colors.black.withOpacity(0.4),
                           borderRadius: BorderRadius.circular(25),
+                          // ignore: deprecated_member_use
                           border: Border.all(
                             // ignore: deprecated_member_use
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withOpacity(0.1),
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              // ignore: deprecated_member_use
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 20,
-                              spreadRadius: 5,
-                            ),
-                          ],
                         ),
                         child: Column(
                           children: [
                             _buildGlassTextField(
-                              hint: "Staff Email",
-                              icon: Icons.email_outlined,
+                              hint: "Staff ID",
+                              icon: Icons.perm_identity,
                             ),
                             const SizedBox(height: 20),
                             _buildGlassTextField(
@@ -173,13 +160,16 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                                           onChanged: (val) => setState(
                                             () => _rememberMe = val!,
                                           ),
-                                          activeColor: Colors.white,
-                                          checkColor: const Color(
-                                            0xFF4A00E0,
-                                          ), // Purple check
+                                          activeColor: Colors.deepPurple,
+                                          checkColor: Colors.white,
                                           side: const BorderSide(
-                                            color: Colors.white70,
+                                            color: Colors.white54,
                                             width: 1.5,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -187,14 +177,13 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                                       Text(
                                         "Remember",
                                         style: GoogleFonts.lato(
-                                          color: Colors.white,
+                                          color: Colors.white70,
                                           fontSize: 13,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-
                                 GestureDetector(
                                   onTap: () {
                                     Navigator.push(
@@ -207,7 +196,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                                   child: Text(
                                     "Forgot Password?",
                                     style: GoogleFonts.lato(
-                                      color: Colors.white,
+                                      color: Colors.purple.shade200,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
                                     ),
@@ -217,29 +206,26 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                             ),
                             const SizedBox(height: 30),
 
-                            // SIGN IN BUTTON
                             SizedBox(
                               width: double.infinity,
                               height: 55,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  Navigator.pushReplacement(
+                                  Navigator.pushAndRemoveUntil(
                                     context,
-                                    FadePageRoute(page: const StaffHomePage()),
+                                    FadePageRoute(page: HomeScreen(userRole: 'staff')),
+                                    (route) => false,
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: const Color(
-                                    0xFF4A00E0,
-                                  ), // Matching Purple Text
+                                  foregroundColor: const Color(0xFF0F0C29),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15),
                                   ),
-                                  elevation: 0,
                                 ),
                                 child: Text(
-                                  "SIGN IN",
+                                  "LOG IN",
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -252,13 +238,11 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
                   Text(
                     "International Islamic University Malaysia",
                     style: GoogleFonts.lato(
-                      color: Colors.white54,
+                      color: Colors.white30,
                       fontSize: 12,
                     ),
                   ),
@@ -272,16 +256,11 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
     );
   }
 
-  // --------------------------
-  // WIDGET HELPERS
-  // --------------------------
-
   Widget _buildBackground() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          // NEW LIGHTER THEME (Royal Purple -> Blue Purple)
-          colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+          colors: [Color(0xFF0F0C29), Color(0xFF302B63), Color(0xFF24243E)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -291,34 +270,25 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
           Positioned(
             top: -100,
             left: -50,
-            child: _buildCircleBlob(
-              size: 300,
-              // ignore: deprecated_member_use
-              color: const Color(0xFFA155E8).withOpacity(0.5), // Lighter accent
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            right: -50,
-            child: _buildCircleBlob(
-              size: 250,
-              // ignore: deprecated_member_use
-              color: Colors.white.withOpacity(0.1), // Subtle white blob
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // ignore: deprecated_member_use
+                color: Colors.deepPurple.shade900.withOpacity(0.5),
+                boxShadow: [
+                  BoxShadow(
+                    // ignore: deprecated_member_use
+                    color: Colors.deepPurple.shade900.withOpacity(0.5),
+                    blurRadius: 100,
+                    spreadRadius: 20,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCircleBlob({required double size, required Color color}) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        boxShadow: [BoxShadow(color: color, blurRadius: 100, spreadRadius: 20)],
       ),
     );
   }
@@ -331,24 +301,23 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
     return Container(
       decoration: BoxDecoration(
         // ignore: deprecated_member_use
-        color: Colors.white.withOpacity(0.2), // Light glass input
+        color: Colors.black.withOpacity(0.3),
         borderRadius: BorderRadius.circular(15),
       ),
       child: TextFormField(
         obscureText: isPassword ? _isPasswordObscured : false,
         style: GoogleFonts.lato(color: Colors.white),
-        cursorColor: Colors.white,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.lato(color: Colors.white70),
-          prefixIcon: Icon(icon, color: Colors.white70, size: 22),
+          hintStyle: GoogleFonts.lato(color: Colors.white38),
+          prefixIcon: Icon(icon, color: Colors.white54, size: 22),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     _isPasswordObscured
                         ? Icons.visibility_off
                         : Icons.visibility,
-                    color: Colors.white70,
+                    color: Colors.white38,
                     size: 20,
                   ),
                   onPressed: () {
