@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:audioplayers/audioplayers.dart'; // REQUIRED PACKAGE
+import 'package:audioplayers/audioplayers.dart'; 
 import 'staff_attendance_settings_page.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StaffLiveAttendancePitsSect1Page extends StatefulWidget {
   const StaffLiveAttendancePitsSect1Page({super.key});
@@ -14,72 +17,65 @@ class StaffLiveAttendancePitsSect1Page extends StatefulWidget {
 class _StaffLiveAttendancePitsSect1PageState
     extends State<StaffLiveAttendancePitsSect1Page>
     with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+    late AnimationController _pulseController;
+    late Animation<double> _pulseAnimation;
 
-  // Audio Player
+  // Audio Player State
   late AudioPlayer _audioPlayer;
-  bool _soundEnabled = true; // State for sound
-  double _volume = 0.5; // State for volume (0.0 to 1.0)
+  bool _soundEnabled = true;
+  double _volume = 0.5;
 
-  // --- MOCK DATA: 45 STUDENTS ---
+  // --- NFC STATE ---
+  bool _isNfcScanning = false; 
+  String _nfcStatus = "Ready to Scan";
+
+  // --- MOCK DATA: 38 STUDENTS (NetSec Sect 1) ---
   final List<Map<String, dynamic>> _students = [
-    {"name": "Aaron Lim", "id": "2110001", "status": "Pending", "time": "-"},
-    {"name": "Amira H.", "id": "2110002", "status": "Pending", "time": "-"},
-    {"name": "Benjamin T.", "id": "2110003", "status": "Pending", "time": "-"},
-    {"name": "Cassandra", "id": "2110004", "status": "Pending", "time": "-"},
-    {"name": "Dinesh K.", "id": "2110005", "status": "Pending", "time": "-"},
-    {"name": "Elena R.", "id": "2110006", "status": "Pending", "time": "-"},
-    {"name": "Faizal M.", "id": "2110007", "status": "Pending", "time": "-"},
-    {"name": "Grace Lee", "id": "2110008", "status": "Pending", "time": "-"},
-    {"name": "Hafiz S.", "id": "2110009", "status": "Pending", "time": "-"},
-    {"name": "Iris Wong", "id": "2110010", "status": "Pending", "time": "-"},
-    {"name": "Jason C.", "id": "2110011", "status": "Pending", "time": "-"},
-    {"name": "Khairul A.", "id": "2110012", "status": "Pending", "time": "-"},
-    {"name": "Latifah", "id": "2110013", "status": "Pending", "time": "-"},
-    {"name": "Michelle", "id": "2110014", "status": "Pending", "time": "-"},
-    {"name": "Nathan", "id": "2110015", "status": "Pending", "time": "-"},
-    {"name": "Olivia P.", "id": "2110016", "status": "Pending", "time": "-"},
-    {"name": "Peter Tan", "id": "2110017", "status": "Pending", "time": "-"},
-    {"name": "Qayla R.", "id": "2110018", "status": "Pending", "time": "-"},
-    {"name": "Ramesh V.", "id": "2110019", "status": "Pending", "time": "-"},
-    {"name": "Sarah J.", "id": "2110020", "status": "Pending", "time": "-"},
-    {"name": "Taufiq H.", "id": "2110021", "status": "Pending", "time": "-"},
-    {"name": "Umairah", "id": "2110022", "status": "Pending", "time": "-"},
-    {"name": "Victor L.", "id": "2110023", "status": "Pending", "time": "-"},
-    {"name": "Wei Ming", "id": "2110024", "status": "Pending", "time": "-"},
-    {"name": "Xandra", "id": "2110025", "status": "Pending", "time": "-"},
-    {"name": "Yusri B.", "id": "2110026", "status": "Pending", "time": "-"},
-    {"name": "Zahra K.", "id": "2110027", "status": "Pending", "time": "-"},
-    {"name": "Adam Lee", "id": "2110028", "status": "Pending", "time": "-"},
-    {"name": "Brian Goh", "id": "2110029", "status": "Pending", "time": "-"},
-    {"name": "Cindy T.", "id": "2110030", "status": "Pending", "time": "-"},
-    {"name": "David C.", "id": "2110031", "status": "Pending", "time": "-"},
-    {"name": "Esther Y.", "id": "2110032", "status": "Pending", "time": "-"},
-    {"name": "Farhan Z.", "id": "2110033", "status": "Pending", "time": "-"},
-    {"name": "Gavin S.", "id": "2110034", "status": "Pending", "time": "-"},
-    {"name": "Hana Lim", "id": "2110035", "status": "Pending", "time": "-"},
-    {"name": "Isaac N.", "id": "2110036", "status": "Pending", "time": "-"},
-    {"name": "Julia R.", "id": "2110037", "status": "Pending", "time": "-"},
-    {"name": "Kamal D.", "id": "2110038", "status": "Pending", "time": "-"},
-    {"name": "Lisa M.", "id": "2110039", "status": "Pending", "time": "-"},
-    {"name": "Manny P.", "id": "2110040", "status": "Pending", "time": "-"},
-    {"name": "Nina O.", "id": "2110041", "status": "Pending", "time": "-"},
-    {"name": "Oscar T.", "id": "2110042", "status": "Pending", "time": "-"},
-    {"name": "Penny L.", "id": "2110043", "status": "Pending", "time": "-"},
-    {"name": "Quinn S.", "id": "2110044", "status": "Pending", "time": "-"},
-    {"name": "Ryan K.", "id": "2110045", "status": "Pending", "time": "-"},
+    {"name": "Alice Tan", "id": "2130001", "status": "Pending", "time": "-"},
+    {"name": "Bryan Lim", "id": "2130002", "status": "Pending", "time": "-"},
+    {"name": "Charles K.", "id": "2130003", "status": "Pending", "time": "-"},
+    {"name": "Diana R.", "id": "2130004", "status": "Pending", "time": "-"},
+    {"name": "Ethan Ho", "id": "2130005", "status": "Pending", "time": "-"},
+    {"name": "Fiona G.", "id": "2130006", "status": "Pending", "time": "-"},
+    {"name": "George T.", "id": "2130007", "status": "Pending", "time": "-"},
+    {"name": "Hannah L.", "id": "2130008", "status": "Pending", "time": "-"},
+    {"name": "Ian V.", "id": "2130009", "status": "Pending", "time": "-"},
+    {"name": "Jessica M.", "id": "2130010", "status": "Pending", "time": "-"},
+    {"name": "Kevin S.", "id": "2130011", "status": "Pending", "time": "-"},
+    {"name": "Liam P.", "id": "2130012", "status": "Pending", "time": "-"},
+    {"name": "Monica B.", "id": "2130013", "status": "Pending", "time": "-"},
+    {"name": "Nathan D.", "id": "2130014", "status": "Pending", "time": "-"},
+    {"name": "Oliver Q.", "id": "2130015", "status": "Pending", "time": "-"},
+    {"name": "Patricia W.", "id": "2130016", "status": "Pending", "time": "-"},
+    {"name": "Quentin Z.", "id": "2130017", "status": "Pending", "time": "-"},
+    {"name": "Rachel Y.", "id": "2130018", "status": "Pending", "time": "-"},
+    {"name": "Steven X.", "id": "2130019", "status": "Pending", "time": "-"},
+    {"name": "Tiffany C.", "id": "2130020", "status": "Pending", "time": "-"},
+    {"name": "Umar F.", "id": "2130021", "status": "Pending", "time": "-"},
+    {"name": "Victor H.", "id": "2130022", "status": "Pending", "time": "-"},
+    {"name": "Wendy J.", "id": "2130023", "status": "Pending", "time": "-"},
+    {"name": "Xavier K.", "id": "2130024", "status": "Pending", "time": "-"},
+    {"name": "Yvonne N.", "id": "2130025", "status": "Pending", "time": "-"},
+    {"name": "Zack M.", "id": "2130026", "status": "Pending", "time": "-"},
+    {"name": "Adam O.", "id": "2130027", "status": "Pending", "time": "-"},
+    {"name": "Bella P.", "id": "2130028", "status": "Pending", "time": "-"},
+    {"name": "Chris Q.", "id": "2130029", "status": "Pending", "time": "-"},
+    {"name": "Daisy R.", "id": "2130030", "status": "Pending", "time": "-"},
+    {"name": "Edward S.", "id": "2130031", "status": "Pending", "time": "-"},
+    {"name": "Felicia T.", "id": "2130032", "status": "Pending", "time": "-"},
+    {"name": "Greg U.", "id": "2130033", "status": "Pending", "time": "-"},
+    {"name": "Helen V.", "id": "2130034", "status": "Pending", "time": "-"},
+    {"name": "Ivan W.", "id": "2130035", "status": "Pending", "time": "-"},
+    {"name": "Jenny X.", "id": "2130036", "status": "Pending", "time": "-"},
+    {"name": "Karl Y.", "id": "2130037", "status": "Pending", "time": "-"},
+    {"name": "Lily Z.", "id": "2130038", "status": "Pending", "time": "-"},
   ];
 
   @override
   void initState() {
     super.initState();
     _students.sort((a, b) => a['id'].compareTo(b['id']));
-
-    // Initialize Audio
     _audioPlayer = AudioPlayer();
-
-    // Pulse Animation
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -93,8 +89,126 @@ class _StaffLiveAttendancePitsSect1PageState
   @override
   void dispose() {
     _pulseController.dispose();
-    _audioPlayer.dispose(); // Dispose audio
+    _audioPlayer.dispose();
+    NfcManager.instance.stopSession();
     super.dispose();
+  }
+
+  // --- NFC LOGIC START ---
+  void _toggleNfc() async {
+    if (_isNfcScanning) {
+      // Stop Scanning
+      await NfcManager.instance.stopSession();
+      setState(() {
+        _isNfcScanning = false;
+        _nfcStatus = "Scanning Stopped";
+      });
+    } else {
+      // Start Scanning
+      bool isAvailable = await NfcManager.instance.isAvailable();
+      if (!isAvailable) {
+        _showSnackBar("NFC not available on this device", Colors.red);
+        return;
+      }
+
+      setState(() {
+        _isNfcScanning = true;
+        _nfcStatus = "Hold card to phone...";
+      });
+
+      NfcManager.instance.startSession(
+        onDiscovered: (NfcTag tag) async {
+          // Extract UID
+          String? uid = _extractUid(tag);
+          if (uid != null) {
+            _handleScannedTag(uid);
+          }
+        },
+      );
+    }
+  }
+
+  String? _extractUid(NfcTag tag) {
+    final data = tag.data;
+    List<int>? idBytes;
+    if (data.containsKey('isodep')) {
+      idBytes = List<int>.from(data['isodep']['identifier']);
+    } else if (data.containsKey('nfca')) {
+      idBytes = List<int>.from(data['nfca']['identifier']);
+    } else if (data.containsKey('mifareclassic')) {
+      idBytes = List<int>.from(data['mifareclassic']['identifier']);
+    }
+
+    if (idBytes == null) return null;
+    return idBytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+  }
+
+  void _handleScannedTag(String uid) async {
+    // 1. Play "Beep" Sound
+    if (_soundEnabled) {
+      try {
+        await _audioPlayer.setVolume(_volume);
+        await _audioPlayer.play(AssetSource('beep.mp3'));
+      } catch (e) {
+      }
+    }
+
+    _showSnackBar("Checking database...", Colors.blue);
+
+    try {
+      // 2. LOOK UP USER IN FIRESTORE
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('student_registrations')
+          .where('physicalCardUid', isEqualTo: uid)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        _showSnackBar("❌ Card not registered in system.", Colors.red);
+        return;
+      }
+
+      // 3. GET STUDENT DATA FROM DATABASE
+      final studentData = querySnapshot.docs.first.data();
+      final String scannedName = studentData['name'] ?? "Unknown";
+      final String scannedId = studentData['studentId'] ?? "0000000";
+
+      // 4. FIND & UPDATE (OR ADD NEW)
+      bool foundInClass = false;
+
+      setState(() {
+        // A. Try to find them in the existing list
+        for (var s in _students) {
+          if (s['id'].toString() == scannedId) {
+            s['status'] = 'Present';
+            s['time'] = TimeOfDay.now().format(context);
+            foundInClass = true;
+            break;
+          }
+        }
+
+        // B. If NOT found, add them dynamically (FYP Feature)
+        if (!foundInClass) {
+          _students.insert(0, { 
+            "name": scannedName,
+            "id": scannedId,
+            "status": "Present",
+            "time": TimeOfDay.now().format(context),
+          });
+        }
+      });
+
+      // 5. SUCCESS MESSAGE
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      if (foundInClass) {
+        _showSnackBar("✅ $scannedName marked PRESENT!", Colors.green);
+      } else {
+        _showSnackBar("➕ $scannedName added to class & marked PRESENT!", Colors.blue);
+      }
+
+    } catch (e) {
+      _showSnackBar("Error: $e", Colors.red);
+    }
   }
 
   void _resetAttendanceData() {
@@ -111,13 +225,20 @@ class _StaffLiveAttendancePitsSect1PageState
       ),
     );
   }
+  void _showSnackBar(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
 
-  // --- PLAY SOUND LOGIC ---
   Future<void> _playSound() async {
     if (_soundEnabled) {
       try {
         await _audioPlayer.setVolume(_volume);
-        // Ensure you have 'beep.mp3' in your assets folder and pubspec.yaml
         await _audioPlayer.play(AssetSource('beep.mp3'));
       } catch (e) {
         debugPrint("Audio Error: $e");
@@ -131,7 +252,7 @@ class _StaffLiveAttendancePitsSect1PageState
       for (var s in _students) {
         if (s['status'] == 'Pending') {
           s['status'] = 'Present';
-          s['time'] = '08:45 AM';
+          s['time'] = '02:15 PM'; 
           marked = true;
           break;
         }
@@ -139,9 +260,7 @@ class _StaffLiveAttendancePitsSect1PageState
     });
 
     if (marked) {
-      // Play Sound
       await _playSound();
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -168,7 +287,6 @@ class _StaffLiveAttendancePitsSect1PageState
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              // ignore: deprecated_member_use
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
@@ -181,7 +299,7 @@ class _StaffLiveAttendancePitsSect1PageState
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Live: PITS Sect 1",
+          "Live: NetSec Sect 1",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -194,7 +312,6 @@ class _StaffLiveAttendancePitsSect1PageState
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                // Pass current state and callbacks
                 builder: (_) => StaffAttendanceSettingsPage(
                   onReset: _resetAttendanceData,
                   soundEnabled: _soundEnabled,
@@ -229,13 +346,11 @@ class _StaffLiveAttendancePitsSect1PageState
             child: Column(
               children: [
                 const SizedBox(height: 10),
-                // Pulse Animation
                 ScaleTransition(
                   scale: _pulseAnimation,
                   child: Container(
                     padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
-                      // ignore: deprecated_member_use
                       color: Colors.white.withOpacity(0.15),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white30, width: 2),
@@ -249,7 +364,7 @@ class _StaffLiveAttendancePitsSect1PageState
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "Principles of IT Security (Sect 1)",
+                  "Network Security (Sect 1)",
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 16,
@@ -267,7 +382,6 @@ class _StaffLiveAttendancePitsSect1PageState
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        // ignore: deprecated_member_use
                         color: Colors.black.withOpacity(0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
@@ -302,23 +416,32 @@ class _StaffLiveAttendancePitsSect1PageState
           ),
         ],
       ),
+
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _simulateNfcScan,
-        backgroundColor: const Color(0xFF4A00E0),
-        icon: const Icon(
-          Icons.wifi_tethering,
-          color: Colors.white,
-        ), // Icon White
-        label: const Text(
-          "Simulate Scan",
-          style: TextStyle(color: Colors.white), // Text White
+        onPressed: _toggleNfc,
+        backgroundColor: _isNfcScanning ? Colors.red : const Color(0xFF4A00E0),
+        icon: Icon(_isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc, color: Colors.white),
+        label: Text(
+          _isNfcScanning ? "Stop Scanning" : "Start NFC Scan",
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );
   }
 
-  // --- HELPERS ---
+  Widget _buildNfcIcon(Color color) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white30, width: 2),
+      ),
+      child: Icon(Icons.nfc_rounded, size: 50, color: color),
+    );
+  }
 
+  // --- HELPERS ---
   Widget _buildStatItem(String label, int count, Color color) {
     return Column(
       children: [
@@ -372,7 +495,6 @@ class _StaffLiveAttendancePitsSect1PageState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -425,7 +547,6 @@ class _StaffLiveAttendancePitsSect1PageState
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            // ignore: deprecated_member_use
             color: statusColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
@@ -510,7 +631,6 @@ class _StaffLiveAttendancePitsSect1PageState
           color: isActive ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            // ignore: deprecated_member_use
             color: isActive ? Colors.transparent : color.withOpacity(0.5),
           ),
         ),
