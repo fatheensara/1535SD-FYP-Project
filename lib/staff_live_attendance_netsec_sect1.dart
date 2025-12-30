@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:audioplayers/audioplayers.dart'; // REQUIRED PACKAGE
+import 'package:audioplayers/audioplayers.dart'; 
 import 'staff_attendance_settings_page.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StaffLiveAttendanceNetsecSect1Page extends StatefulWidget {
   const StaffLiveAttendanceNetsecSect1Page({super.key});
@@ -16,11 +19,11 @@ class _StaffLiveAttendanceNetsecSect1PageState
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-
-  // Audio Player State
   late AudioPlayer _audioPlayer;
   bool _soundEnabled = true;
   double _volume = 0.5;
+  bool _isNfcScanning = false; 
+  String _nfcStatus = "Ready to Scan";
 
   // --- MOCK DATA: 38 STUDENTS (NetSec Sect 1) ---
   final List<Map<String, dynamic>> _students = [
@@ -67,13 +70,8 @@ class _StaffLiveAttendanceNetsecSect1PageState
   @override
   void initState() {
     super.initState();
-    // Sort by ID
     _students.sort((a, b) => a['id'].compareTo(b['id']));
-
-    // Initialize Audio
     _audioPlayer = AudioPlayer();
-
-    // Pulse Animation
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -88,7 +86,121 @@ class _StaffLiveAttendanceNetsecSect1PageState
   void dispose() {
     _pulseController.dispose();
     _audioPlayer.dispose();
+    NfcManager.instance.stopSession();
     super.dispose();
+  }
+
+  // --- NFC LOGIC START ---
+  void _toggleNfc() async {
+    if (_isNfcScanning) {
+      await NfcManager.instance.stopSession();
+      setState(() {
+        _isNfcScanning = false;
+        _nfcStatus = "Scanning Stopped";
+      });
+    } else {
+      bool isAvailable = await NfcManager.instance.isAvailable();
+      if (!isAvailable) {
+        _showSnackBar("NFC not available on this device", Colors.red);
+        return;
+      }
+
+      setState(() {
+        _isNfcScanning = true;
+        _nfcStatus = "Hold card to phone...";
+      });
+
+      NfcManager.instance.startSession(
+        onDiscovered: (NfcTag tag) async {
+          String? uid = _extractUid(tag);
+          if (uid != null) {
+            _handleScannedTag(uid);
+          }
+        },
+      );
+    }
+  }
+
+  String? _extractUid(NfcTag tag) {
+    final data = tag.data;
+    List<int>? idBytes;
+    if (data.containsKey('isodep')) {
+      idBytes = List<int>.from(data['isodep']['identifier']);
+    } else if (data.containsKey('nfca')) {
+      idBytes = List<int>.from(data['nfca']['identifier']);
+    } else if (data.containsKey('mifareclassic')) {
+      idBytes = List<int>.from(data['mifareclassic']['identifier']);
+    }
+
+    if (idBytes == null) return null;
+    return idBytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+  }
+
+  void _handleScannedTag(String uid) async {
+    // 1. Play "Beep" Sound
+    if (_soundEnabled) {
+      try {
+        await _audioPlayer.setVolume(_volume);
+        await _audioPlayer.play(AssetSource('beep.mp3'));
+      } catch (e) {
+      }
+    }
+
+    _showSnackBar("Checking database...", Colors.blue);
+
+    try {
+      // 2. LOOK UP USER IN FIRESTORE
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('student_registrations')
+          .where('physicalCardUid', isEqualTo: uid)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        _showSnackBar("❌ Card not registered in system.", Colors.red);
+        return;
+      }
+
+      // 3. GET STUDENT DATA FROM DATABASE
+      final studentData = querySnapshot.docs.first.data();
+      final String scannedName = studentData['name'] ?? "Unknown";
+      final String scannedId = studentData['studentId'] ?? "0000000";
+
+      bool foundInClass = false;
+
+      setState(() {
+        // A. Try to find them in the existing list
+        for (var s in _students) {
+          if (s['id'].toString() == scannedId) {
+            s['status'] = 'Present';
+            s['time'] = TimeOfDay.now().format(context);
+            foundInClass = true;
+            break;
+          }
+        }
+
+        // B. If NOT found, add them dynamically (FYP Feature)
+        if (!foundInClass) {
+          _students.insert(0, { 
+            "name": scannedName,
+            "id": scannedId,
+            "status": "Present",
+            "time": TimeOfDay.now().format(context),
+          });
+        }
+      });
+
+      // 5. SUCCESS MESSAGE
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      if (foundInClass) {
+        _showSnackBar("✅ $scannedName marked PRESENT!", Colors.green);
+      } else {
+        _showSnackBar("➕ $scannedName added to class & marked PRESENT!", Colors.blue);
+      }
+
+    } catch (e) {
+      _showSnackBar("Error: $e", Colors.red);
+    }
   }
 
   void _resetAttendanceData() {
@@ -123,7 +235,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
       for (var s in _students) {
         if (s['status'] == 'Pending') {
           s['status'] = 'Present';
-          s['time'] = '02:15 PM'; // NetSec time
+          s['time'] = '02:15 PM'; 
           marked = true;
           break;
         }
@@ -140,6 +252,15 @@ class _StaffLiveAttendanceNetsecSect1PageState
         );
       }
     }
+  }
+  void _showSnackBar(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   @override
@@ -158,7 +279,6 @@ class _StaffLiveAttendanceNetsecSect1PageState
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              // ignore: deprecated_member_use
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
@@ -218,13 +338,11 @@ class _StaffLiveAttendanceNetsecSect1PageState
             child: Column(
               children: [
                 const SizedBox(height: 10),
-                // Pulse Animation
                 ScaleTransition(
                   scale: _pulseAnimation,
                   child: Container(
                     padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
-                      // ignore: deprecated_member_use
                       color: Colors.white.withOpacity(0.15),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white30, width: 2),
@@ -246,8 +364,6 @@ class _StaffLiveAttendanceNetsecSect1PageState
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // STATS CARD
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   padding: const EdgeInsets.all(20),
@@ -256,7 +372,6 @@ class _StaffLiveAttendanceNetsecSect1PageState
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        // ignore: deprecated_member_use
                         color: Colors.black.withOpacity(0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
@@ -292,18 +407,28 @@ class _StaffLiveAttendanceNetsecSect1PageState
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _simulateNfcScan,
-        backgroundColor: const Color(0xFF4A00E0),
-        icon: const Icon(Icons.wifi_tethering, color: Colors.white),
-        label: const Text(
-          "Simulate Scan",
-          style: TextStyle(color: Colors.white),
+        onPressed: _toggleNfc,
+        backgroundColor: _isNfcScanning ? Colors.red : const Color(0xFF4A00E0),
+        icon: Icon(_isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc, color: Colors.white),
+        label: Text(
+          _isNfcScanning ? "Stop Scanning" : "Start NFC Scan",
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );
   }
 
-  // --- HELPERS ---
+  Widget _buildNfcIcon(Color color) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white30, width: 2),
+      ),
+      child: Icon(Icons.nfc_rounded, size: 50, color: color),
+    );
+  }
 
   Widget _buildStatItem(String label, int count, Color color) {
     return Column(
@@ -358,7 +483,6 @@ class _StaffLiveAttendanceNetsecSect1PageState
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -411,7 +535,6 @@ class _StaffLiveAttendanceNetsecSect1PageState
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            // ignore: deprecated_member_use
             color: statusColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
@@ -496,7 +619,6 @@ class _StaffLiveAttendanceNetsecSect1PageState
           color: isActive ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            // ignore: deprecated_member_use
             color: isActive ? Colors.transparent : color.withOpacity(0.5),
           ),
         ),
