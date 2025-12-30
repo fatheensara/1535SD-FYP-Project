@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'admin_signin.dart';
@@ -27,7 +29,11 @@ class AdminSignUpPage extends StatelessWidget {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+                colors: [
+                  Color(0xFF0F2027),
+                  Color(0xFF203A43),
+                  Color(0xFF2C5364),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -48,7 +54,11 @@ class AdminSignUpPage extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.lock_person, size: 60, color: Colors.tealAccent),
+                    const Icon(
+                      Icons.lock_person,
+                      size: 60,
+                      color: Colors.tealAccent,
+                    ),
                     const SizedBox(height: 20),
                     Text(
                       "Access Restricted",
@@ -62,7 +72,10 @@ class AdminSignUpPage extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       "Admin accounts cannot be created publicly. They are provisioned by the IT Department.",
-                      style: GoogleFonts.lato(color: Colors.white70, fontSize: 16),
+                      style: GoogleFonts.lato(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 30),
@@ -70,7 +83,7 @@ class AdminSignUpPage extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                           Navigator.pushReplacement(
+                          Navigator.pushReplacement(
                             context,
                             FadePageRoute(page: const AdminSignInPage()),
                           );

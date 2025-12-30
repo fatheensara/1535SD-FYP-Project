@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'staff_forgot_password_page.dart';
+// ignore: unused_import
 import 'staff_home.dart'; // Ensure this matches your home page file name
 import 'staff_hello.dart'; // <--- Added for navigation
 import 'fade_page_route.dart';
-import 'home_screen.dart'; 
+import 'home_screen.dart';
 
 class StaffSignInPage extends StatefulWidget {
   const StaffSignInPage({super.key});
@@ -213,7 +214,9 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                                 onPressed: () {
                                   Navigator.pushAndRemoveUntil(
                                     context,
-                                    FadePageRoute(page: HomeScreen(userRole: 'staff')),
+                                    FadePageRoute(
+                                      page: HomeScreen(userRole: 'staff'),
+                                    ),
                                     (route) => false,
                                   );
                                 },

@@ -4,14 +4,14 @@ import 'package:intl/intl.dart';
 
 // --- IMPORTS ---
 import 'fade_page_route.dart';
-import 'staff_attendance_monitor_page.dart'; 
-import 'staff_schedule_page.dart'; 
-import 'staff_reports_page.dart'; 
+import 'staff_attendance_monitor_page.dart';
+import 'staff_schedule_page.dart';
+import 'staff_reports_page.dart';
 import 'staff_approvals_page.dart';
 import 'staff_consultation_page.dart';
 import 'staff_broadcast_page.dart';
-import 'staff_profile_page.dart'; 
-import 'welcome.dart'; 
+import 'staff_profile_page.dart';
+import 'welcome.dart';
 
 class StaffHomePage extends StatefulWidget {
   const StaffHomePage({super.key});
@@ -35,10 +35,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
             height: 250,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF1A0038), 
-                  Color(0xFF4A00E0), 
-                ],
+                colors: [Color(0xFF1A0038), Color(0xFF4A00E0)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -54,9 +51,9 @@ class _StaffHomePageState extends State<StaffHomePage> {
             index: _currentIndex,
             children: [
               _buildLecturerDashboard(), // Index 0: Home
-              const StaffSchedulePage(), // Index 1: Schedule 
-              const StaffReportsPage(),  // Index 2: Reports 
-              const StaffProfilePage(),  // Index 3: Profile 
+              const StaffSchedulePage(), // Index 1: Schedule
+              const StaffReportsPage(), // Index 2: Reports
+              const StaffProfilePage(), // Index 3: Profile
             ],
           ),
 
@@ -169,7 +166,9 @@ class _StaffHomePageState extends State<StaffHomePage> {
                       () {
                         Navigator.push(
                           context,
-                          FadePageRoute(page: const StaffAttendanceMonitorPage()),
+                          FadePageRoute(
+                            page: const StaffAttendanceMonitorPage(),
+                          ),
                         );
                       },
                     ),
@@ -271,6 +270,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
+                  // ignore: deprecated_member_use
                   color: Colors.grey.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
@@ -300,6 +300,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.08),
             blurRadius: 25,
             offset: const Offset(0, 10),
@@ -406,6 +407,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -442,6 +444,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),

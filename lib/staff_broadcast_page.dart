@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'services/notification_service.dart'; 
+import 'services/notification_service.dart';
 
 class StaffBroadcastPage extends StatefulWidget {
   const StaffBroadcastPage({super.key});
@@ -13,7 +13,7 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
   // Text Controllers
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
-  bool _isSending = false; 
+  bool _isSending = false;
 
   // --- MOCK SUBJECT LIST ---
   final List<Map<String, dynamic>> _subjects = [
@@ -99,9 +99,9 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
       await NotificationService.sendBroadcast(
         title: _titleController.text,
         message: _bodyController.text,
-        type: "Broadcast", 
+        type: "Broadcast",
         courseCodes: selectedCourses,
-        senderName: "Dr. Andi Fitriah", 
+        senderName: "Dr. Andi Fitriah",
       );
 
       if (mounted) {
@@ -111,13 +111,13 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context); 
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error sending broadcast: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error sending broadcast: $e")));
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -146,10 +146,15 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
+              // ignore: deprecated_member_use
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.white,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -176,9 +181,22 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Notify Students", style: GoogleFonts.lato(color: Colors.white70, fontSize: 14)),
+                  Text(
+                    "Notify Students",
+                    style: GoogleFonts.lato(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 5),
-                  Text("Select Recipients", style: GoogleFonts.poppins(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(
+                    "Select Recipients",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 30),
 
                   // Subject Selection Card
@@ -187,13 +205,25 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 5)),
+                        // ignore: deprecated_member_use
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 5),
+                        ),
                       ],
                     ),
                     child: Column(
                       children: [
                         CheckboxListTile(
-                          title: Text("Select All Classes", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF4A00E0))),
+                          title: Text(
+                            "Select All Classes",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF4A00E0),
+                            ),
+                          ),
                           value: allSelected,
                           onChanged: _toggleSelectAll,
                           activeColor: const Color(0xFF4A00E0),
@@ -202,10 +232,20 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
                         const Divider(height: 1),
                         ..._subjects.map((subject) {
                           return CheckboxListTile(
-                            title: Text("${subject['code']} - ${subject['section']}", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
-                            subtitle: Text(subject['name'], style: GoogleFonts.lato(fontSize: 12)),
+                            title: Text(
+                              "${subject['code']} - ${subject['section']}",
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            subtitle: Text(
+                              subject['name'],
+                              style: GoogleFonts.lato(fontSize: 12),
+                            ),
                             value: subject['isSelected'],
-                            onChanged: (val) => setState(() => subject['isSelected'] = val),
+                            onChanged: (val) =>
+                                setState(() => subject['isSelected'] = val),
                             activeColor: const Color(0xFF4A00E0),
                             controlAffinity: ListTileControlAffinity.leading,
                           );
@@ -215,16 +255,31 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
                   ),
 
                   const SizedBox(height: 25),
-                  Text("Compose Message", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  Text(
+                    "Compose Message",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
                   const SizedBox(height: 10),
 
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildTemplateChip("Class Cancelled", "Cancel", Colors.red),
+                        _buildTemplateChip(
+                          "Class Cancelled",
+                          "Cancel",
+                          Colors.red,
+                        ),
                         const SizedBox(width: 8),
-                        _buildTemplateChip("Room Change", "Room", Colors.orange),
+                        _buildTemplateChip(
+                          "Room Change",
+                          "Room",
+                          Colors.orange,
+                        ),
                         const SizedBox(width: 8),
                         _buildTemplateChip("Reminder", "Reminder", Colors.blue),
                       ],
@@ -242,7 +297,9 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
                   TextField(
                     controller: _bodyController,
                     maxLines: 5,
-                    decoration: _inputDecoration("Type your announcement here..."),
+                    decoration: _inputDecoration(
+                      "Type your announcement here...",
+                    ),
                     style: GoogleFonts.lato(),
                   ),
                 ],
@@ -257,7 +314,15 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))],
+          // ignore: deprecated_member_use
+          boxShadow: [
+            BoxShadow(
+              // ignore: deprecated_member_use
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
         ),
         child: SafeArea(
           child: ElevatedButton.icon(
@@ -266,13 +331,28 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
               backgroundColor: const Color(0xFF4A00E0),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               elevation: 5,
             ),
-            icon: _isSending 
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+            icon: _isSending
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
                 : const Icon(Icons.send_rounded),
-            label: Text(_isSending ? "Sending..." : "Send Broadcast", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+            label: Text(
+              _isSending ? "Sending..." : "Send Broadcast",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
           ),
         ),
       ),
@@ -285,7 +365,10 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
       fillColor: Colors.white,
       hintText: hint,
       hintStyle: GoogleFonts.lato(color: Colors.grey),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
       contentPadding: const EdgeInsets.all(20),
     );
   }
@@ -293,7 +376,12 @@ class _StaffBroadcastPageState extends State<StaffBroadcastPage> {
   Widget _buildTemplateChip(String label, String type, Color color) {
     return ActionChip(
       label: Text(label),
-      labelStyle: GoogleFonts.poppins(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+      labelStyle: GoogleFonts.poppins(
+        color: color,
+        fontWeight: FontWeight.bold,
+        fontSize: 12,
+      ),
+      // ignore: deprecated_member_use
       backgroundColor: color.withOpacity(0.1),
       side: BorderSide.none,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

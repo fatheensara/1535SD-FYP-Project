@@ -61,6 +61,7 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
+              // ignore: deprecated_member_use
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
@@ -130,7 +131,6 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
   // --- WIDGET HELPER ---
 
   Widget _buildClassCard(BuildContext context, Map<String, dynamic> data) {
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -138,6 +138,7 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 5),
@@ -201,6 +202,7 @@ class StaffAttendanceMonitorPage extends StatelessWidget {
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF4A00E0)
+                                        // ignore: deprecated_member_use
                                         .withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),

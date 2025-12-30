@@ -83,7 +83,7 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
         "section": "Section 2",
       },
     ],
-     "THU": [
+    "THU": [
       {
         "startTime": "10:00 AM",
         "endTime": "11:30 AM",
@@ -258,6 +258,7 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
+                      // ignore: deprecated_member_use
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
@@ -434,7 +435,9 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                     border: Border.all(color: accentColor, width: 3),
                   ),
                 ),
-                Expanded(child: Container(width: 2, color: Colors.grey.shade200)),
+                Expanded(
+                  child: Container(width: 2, color: Colors.grey.shade200),
+                ),
               ],
             ),
             const SizedBox(width: 12),
@@ -447,7 +450,9 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                   decoration: BoxDecoration(
                     color: bgColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border(left: BorderSide(color: accentColor, width: 4)),
+                    border: Border(
+                      left: BorderSide(color: accentColor, width: 4),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         // ignore: deprecated_member_use
@@ -474,7 +479,11 @@ class _StaffSchedulePageState extends State<StaffSchedulePage> {
                             ),
                           ),
                           if (event['type'] == 'Class')
-                            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 14,
+                              color: Colors.grey,
+                            ),
                         ],
                       ),
                       if (event['subtitle'] != null) ...[

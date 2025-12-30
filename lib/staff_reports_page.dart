@@ -120,8 +120,10 @@ class StaffReportsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
+        // ignore: deprecated_member_use
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
+        // ignore: deprecated_member_use
         border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Column(
@@ -221,10 +223,9 @@ class StaffReportsPage extends StatelessWidget {
   // --- WIDGET 2: SUBJECT LIST CARD ---
   Widget _buildSubjectCard(BuildContext context, Map<String, dynamic> data) {
     double attendance = data['attendance'];
-    Color barColor =
-        attendance > 0.9
-            ? Colors.green
-            : (attendance > 0.8 ? Colors.orange : Colors.red);
+    Color barColor = attendance > 0.9
+        ? Colors.green
+        : (attendance > 0.8 ? Colors.orange : Colors.red);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -233,6 +234,7 @@ class StaffReportsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 5),
@@ -286,6 +288,7 @@ class StaffReportsPage extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
+                              // ignore: deprecated_member_use
                               color: const Color(0xFF4A00E0).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
@@ -320,7 +323,7 @@ class StaffReportsPage extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 12),
-                      
+
                       // Progress Bar
                       Row(
                         children: [

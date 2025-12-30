@@ -1,6 +1,9 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// ignore: unused_import
 import 'staff_signin.dart';
 import 'fade_page_route.dart';
 import 'home_screen.dart';
@@ -19,7 +22,7 @@ class StaffHelloPage extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          "STAFF", 
+          "STAFF",
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -72,12 +75,10 @@ class StaffHelloPage extends StatelessWidget {
 
                 // SIGN IN Button
                 ElevatedButton(
-                 onPressed: () {
+                  onPressed: () {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      FadePageRoute(
-                        page: HomeScreen(userRole: 'staff'), 
-                      ),
+                      FadePageRoute(page: HomeScreen(userRole: 'staff')),
                       (route) => false,
                     );
                   },

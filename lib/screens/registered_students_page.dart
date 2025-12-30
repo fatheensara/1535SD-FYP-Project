@@ -37,7 +37,9 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Unregister Student'),
-        content: Text('Are you sure you want to unregister ${student?.name}? This will remove their card from the system.'),
+        content: Text(
+          'Are you sure you want to unregister ${student?.name}? This will remove their card from the system.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -70,17 +72,17 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
     if (_searchQuery.isEmpty) {
       return _registeredStudents.entries.toList();
     }
-    
+
     final lowerQuery = _searchQuery.toLowerCase();
     return _registeredStudents.entries.where((entry) {
       final student = entry.value;
       return student.name.toLowerCase().contains(lowerQuery) ||
-             student.studentId.toLowerCase().contains(lowerQuery) ||
-             student.course.toLowerCase().contains(lowerQuery);
+          student.studentId.toLowerCase().contains(lowerQuery) ||
+          student.course.toLowerCase().contains(lowerQuery);
     }).toList();
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     final filteredStudents = _getFilteredStudents();
 
@@ -125,12 +127,18 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            _searchQuery.isEmpty ? 'No Students Registered' : 'No Students Found',
-            style: const TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold),
+            _searchQuery.isEmpty
+                ? 'No Students Registered'
+                : 'No Students Found',
+            style: const TextStyle(
+              fontSize: 18,
+              color: Colors.grey,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            _searchQuery.isEmpty 
+            _searchQuery.isEmpty
                 ? 'Register student cards in the admin panel'
                 : 'Try adjusting your search criteria',
             textAlign: TextAlign.center,
@@ -140,7 +148,8 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
       ),
     );
   }
-   Widget _buildStudentList(List<MapEntry<String, Student>> filteredStudents) {
+
+  Widget _buildStudentList(List<MapEntry<String, Student>> filteredStudents) {
     return Column(
       children: [
         // Search Bar (Person A's styling)
@@ -150,6 +159,7 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
+                // ignore: deprecated_member_use
                 color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
@@ -176,30 +186,31 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.purple.shade600, width: 2.0),
+                borderSide: BorderSide(
+                  color: Colors.purple.shade600,
+                  width: 2.0,
+                ),
               ),
               filled: true,
               fillColor: Colors.grey.shade50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 0,
+              ),
             ),
           ),
         ),
-        
+
         // Statistics Card (Person A's style)
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Colors.purple.shade50,
-                Colors.blue.shade50,
-              ],
+              colors: [Colors.purple.shade50, Colors.blue.shade50],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            border: Border(
-              bottom: BorderSide(color: Colors.grey.shade200),
-            ),
+            border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -225,24 +236,31 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
             ],
           ),
         ),
-        
+
         // Students List
         Expanded(
           child: _isLoading
               ? _buildLoadingState()
               : filteredStudents.isEmpty
-                  ? _buildEmptyState()
-                  : _buildStudentsList(filteredStudents),
+              ? _buildEmptyState()
+              : _buildStudentsList(filteredStudents),
         ),
       ],
     );
   }
-  Widget _buildStatItem(String value, String label, IconData icon, Color color) {
+
+  Widget _buildStatItem(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
+            // ignore: deprecated_member_use
             color: color.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
@@ -259,10 +277,7 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
         ),
         Text(
           label,
-          style: GoogleFonts.lato(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+          style: GoogleFonts.lato(fontSize: 12, color: Colors.grey.shade600),
         ),
       ],
     );
@@ -272,10 +287,7 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.purple.shade50,
-            Colors.blue.shade50,
-          ],
+          colors: [Colors.purple.shade50, Colors.blue.shade50],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -299,15 +311,11 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
     );
   }
 
-
   Widget _buildStudentsList(List<MapEntry<String, Student>> students) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.purple.shade50,
-            Colors.blue.shade50,
-          ],
+          colors: [Colors.purple.shade50, Colors.blue.shade50],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -325,22 +333,15 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
     );
   }
 
-
-
- Widget _buildStudentCard(String cardUid, Student student) {
+  Widget _buildStudentCard(String cardUid, Student student) {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Colors.grey.shade50,
-            ],
+            colors: [Colors.white, Colors.grey.shade50],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -353,20 +354,13 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
             height: 50,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Colors.purple.shade100,
-                  Colors.blue.shade100,
-                ],
+                colors: [Colors.purple.shade100, Colors.blue.shade100],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.person,
-              color: Colors.purple.shade600,
-              size: 24,
-            ),
+            child: Icon(Icons.person, color: Colors.purple.shade600, size: 24),
           ),
           title: Text(
             student.name,
@@ -406,7 +400,11 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(Icons.credit_card, size: 12, color: Colors.green.shade600),
+                  Icon(
+                    Icons.credit_card,
+                    size: 12,
+                    color: Colors.green.shade600,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Card: ${student.physicalCardUid.substring(0, 10)}...',
@@ -420,7 +418,11 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade500),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 12,
+                    color: Colors.grey.shade500,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Registered: ${_formatDate(student.registeredAt)}',
@@ -440,7 +442,11 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: Icon(Icons.delete_outline, color: Colors.red.shade600, size: 20),
+              icon: Icon(
+                Icons.delete_outline,
+                color: Colors.red.shade600,
+                size: 20,
+              ),
               onPressed: () => _unregisterStudent(cardUid),
               tooltip: 'Unregister Student',
             ),
@@ -456,11 +462,12 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
     final now = DateTime.now();
     return _registeredStudents.values.where((student) {
       final registeredDate = student.registeredAt;
-      return now.difference(registeredDate).inDays <= 7; // Active if registered in last 7 days
+      return now.difference(registeredDate).inDays <=
+          7; // Active if registered in last 7 days
     }).length;
   }
 
-   void _showFilterOptions() {
+  void _showFilterOptions() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -483,9 +490,7 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
             // Add filter options here if needed
             Text(
               'Use the search bar above to filter students',
-              style: GoogleFonts.lato(
-                color: Colors.grey.shade600,
-              ),
+              style: GoogleFonts.lato(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -502,9 +507,7 @@ class _RegisteredStudentsPageState extends State<RegisteredStudentsPage> {
                 ),
                 child: Text(
                   'Close',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
               ),
             ),
