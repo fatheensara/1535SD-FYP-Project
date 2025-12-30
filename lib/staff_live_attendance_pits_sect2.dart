@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart'; // REQUIRED PACKAGE
 import 'staff_attendance_settings_page.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StaffLiveAttendancePitsSect2Page extends StatefulWidget {
   const StaffLiveAttendancePitsSect2Page({super.key});
@@ -21,6 +24,10 @@ class _StaffLiveAttendancePitsSect2PageState
   late AudioPlayer _audioPlayer;
   bool _soundEnabled = true;
   double _volume = 0.5;
+
+  // --- NFC STATE ---
+  bool _isNfcScanning = false; // Track if scanning is active
+  String _nfcStatus = "Ready to Scan";
 
   // --- MOCK DATA: 40 STUDENTS (Sect 2) ---
   final List<Map<String, dynamic>> _students = [
@@ -90,7 +97,125 @@ class _StaffLiveAttendancePitsSect2PageState
   void dispose() {
     _pulseController.dispose();
     _audioPlayer.dispose();
+    NfcManager.instance.stopSession();
     super.dispose();
+  }
+  // --- NFC LOGIC START ---
+  void _toggleNfc() async {
+    if (_isNfcScanning) {
+      // Stop Scanning
+      await NfcManager.instance.stopSession();
+      setState(() {
+        _isNfcScanning = false;
+        _nfcStatus = "Scanning Stopped";
+      });
+    } else {
+      // Start Scanning
+      bool isAvailable = await NfcManager.instance.isAvailable();
+      if (!isAvailable) {
+        _showSnackBar("NFC not available on this device", Colors.red);
+        return;
+      }
+
+      setState(() {
+        _isNfcScanning = true;
+        _nfcStatus = "Hold card to phone...";
+      });
+
+      NfcManager.instance.startSession(
+        onDiscovered: (NfcTag tag) async {
+          // Extract UID
+          String? uid = _extractUid(tag);
+          if (uid != null) {
+            _handleScannedTag(uid);
+          }
+        },
+      );
+    }
+  }
+
+  String? _extractUid(NfcTag tag) {
+    final data = tag.data;
+    List<int>? idBytes;
+    if (data.containsKey('isodep')) {
+      idBytes = List<int>.from(data['isodep']['identifier']);
+    } else if (data.containsKey('nfca')) {
+      idBytes = List<int>.from(data['nfca']['identifier']);
+    } else if (data.containsKey('mifareclassic')) {
+      idBytes = List<int>.from(data['mifareclassic']['identifier']);
+    }
+
+    if (idBytes == null) return null;
+    return idBytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+  }
+
+  void _handleScannedTag(String uid) async {
+    // 1. Play "Beep" Sound
+    if (_soundEnabled) {
+      try {
+        await _audioPlayer.setVolume(_volume);
+        await _audioPlayer.play(AssetSource('beep.mp3'));
+      } catch (e) {
+        // ignore audio errors
+      }
+    }
+
+    _showSnackBar("Checking database...", Colors.blue);
+
+    try {
+      // 2. LOOK UP USER IN FIRESTORE
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('student_registrations')
+          .where('physicalCardUid', isEqualTo: uid)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        _showSnackBar("❌ Card not registered in system.", Colors.red);
+        return;
+      }
+
+      // 3. GET STUDENT DATA FROM DATABASE
+      final studentData = querySnapshot.docs.first.data();
+      final String scannedName = studentData['name'] ?? "Unknown";
+      final String scannedId = studentData['studentId'] ?? "0000000";
+
+      // 4. FIND & UPDATE (OR ADD NEW)
+      bool foundInClass = false;
+
+      setState(() {
+        // A. Try to find them in the existing list
+        for (var s in _students) {
+          if (s['id'].toString() == scannedId) {
+            s['status'] = 'Present';
+            s['time'] = TimeOfDay.now().format(context);
+            foundInClass = true;
+            break;
+          }
+        }
+
+        // B. If NOT found, add them dynamically (FYP Feature)
+        if (!foundInClass) {
+          _students.insert(0, { // Add to top of list
+            "name": scannedName,
+            "id": scannedId,
+            "status": "Present",
+            "time": TimeOfDay.now().format(context),
+          });
+        }
+      });
+
+      // 5. SUCCESS MESSAGE
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      if (foundInClass) {
+        _showSnackBar("✅ $scannedName marked PRESENT!", Colors.green);
+      } else {
+        _showSnackBar("➕ $scannedName added to class & marked PRESENT!", Colors.blue);
+      }
+
+    } catch (e) {
+      _showSnackBar("Error: $e", Colors.red);
+    }
   }
 
   void _resetAttendanceData() {
@@ -142,6 +267,15 @@ class _StaffLiveAttendancePitsSect2PageState
         );
       }
     }
+  }// --- HELPER: SHOW SNACKBAR ---
+  void _showSnackBar(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   @override
@@ -294,18 +428,29 @@ class _StaffLiveAttendancePitsSect2PageState
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _simulateNfcScan,
-        backgroundColor: const Color(0xFF4A00E0),
-        icon: const Icon(Icons.wifi_tethering, color: Colors.white),
-        label: const Text(
-          "Simulate Scan",
-          style: TextStyle(color: Colors.white),
+        onPressed: _toggleNfc,
+        backgroundColor: _isNfcScanning ? Colors.red : const Color(0xFF4A00E0),
+        icon: Icon(_isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc, color: Colors.white),
+        label: Text(
+          _isNfcScanning ? "Stop Scanning" : "Start NFC Scan",
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );
   }
 
   // --- HELPERS ---
+  Widget _buildNfcIcon(Color color) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white30, width: 2),
+      ),
+      child: Icon(Icons.nfc_rounded, size: 50, color: color),
+    );
+  }
 
   Widget _buildStatItem(String label, int count, Color color) {
     return Column(
