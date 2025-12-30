@@ -4,15 +4,14 @@ import 'package:intl/intl.dart';
 
 // --- IMPORTS ---
 import 'fade_page_route.dart';
-import 'staff_attendance_monitor_page.dart';
-import 'staff_schedule_page.dart';
-import 'staff_reports_page.dart';
-import 'staff_profile_page.dart';
+import 'staff_attendance_monitor_page.dart'; 
+import 'staff_schedule_page.dart'; 
+import 'staff_reports_page.dart'; 
+import 'staff_approvals_page.dart';
 import 'staff_consultation_page.dart';
 import 'staff_broadcast_page.dart';
-import 'staff_approvals_page.dart';
-// ignore: unused_import
-import 'welcome.dart';
+import 'staff_profile_page.dart'; 
+import 'welcome.dart'; 
 
 class StaffHomePage extends StatefulWidget {
   const StaffHomePage({super.key});
@@ -37,8 +36,8 @@ class _StaffHomePageState extends State<StaffHomePage> {
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF1A0038), // Deep Midnight Purple
-                  Color(0xFF4A00E0), // Royal Purple
+                  Color(0xFF1A0038), 
+                  Color(0xFF4A00E0), 
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -50,14 +49,14 @@ class _StaffHomePageState extends State<StaffHomePage> {
             ),
           ),
 
-          // 2. MAIN CONTENT
+          // 2. MAIN CONTENT (Tab Switcher)
           IndexedStack(
             index: _currentIndex,
             children: [
-              _buildLecturerDashboard(),
-              const StaffSchedulePage(),
-              const StaffReportsPage(),
-              const StaffProfilePage(),
+              _buildLecturerDashboard(), // Index 0: Home
+              const StaffSchedulePage(), // Index 1: Schedule 
+              const StaffReportsPage(),  // Index 2: Reports 
+              const StaffProfilePage(),  // Index 3: Profile 
             ],
           ),
 
@@ -82,7 +81,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // HEADER CONTENT
           SafeArea(
             bottom: false,
             child: Padding(
@@ -113,6 +111,14 @@ class _StaffHomePageState extends State<StaffHomePage> {
                           ),
                         ],
                       ),
+                      // Logout Button
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.white70),
+                        onPressed: () => Navigator.pushReplacement(
+                          context,
+                          FadePageRoute(page: const WelcomeScreen()),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -132,7 +138,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
 
           const SizedBox(height: 10),
 
-          // OVERLAPPING CONTENT
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
@@ -148,7 +153,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                 ),
                 const SizedBox(height: 15),
 
-                // ACTION CARD
+                // ACTION CARD (MC Approval)
                 _buildActionRequiredCard(),
 
                 const SizedBox(height: 30),
@@ -161,21 +166,23 @@ class _StaffHomePageState extends State<StaffHomePage> {
                       Icons.qr_code_scanner,
                       "Attendance",
                       Colors.indigo,
-                      () => Navigator.push(
-                        context,
-                        FadePageRoute(page: const StaffAttendanceMonitorPage()),
-                      ),
+                      () {
+                        Navigator.push(
+                          context,
+                          FadePageRoute(page: const StaffAttendanceMonitorPage()),
+                        );
+                      },
                     ),
                     _buildQuickAction(
                       Icons.people_alt_outlined,
                       "Consultation",
                       Colors.orange,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const StaffConsultationPage(),
-                        ),
-                      ),
+                      () {
+                        Navigator.push(
+                          context,
+                          FadePageRoute(page: const StaffConsultationPage()),
+                        );
+                      },
                     ),
                     _buildQuickAction(
                       Icons.assessment_outlined,
@@ -187,12 +194,12 @@ class _StaffHomePageState extends State<StaffHomePage> {
                       Icons.campaign_outlined,
                       "Broadcast",
                       Colors.pink,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const StaffBroadcastPage(),
-                        ),
-                      ),
+                      () {
+                        Navigator.push(
+                          context,
+                          FadePageRoute(page: const StaffBroadcastPage()),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -241,7 +248,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
         content: Text(message),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
-        duration: const Duration(seconds: 1),
+        duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -264,7 +271,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  // ignore: deprecated_member_use
                   color: Colors.grey.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
@@ -294,7 +300,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.08),
             blurRadius: 25,
             offset: const Offset(0, 10),
@@ -352,9 +357,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const StaffApprovalsPage(),
-                ),
+                FadePageRoute(page: const StaffApprovalsPage()),
               );
             },
             child: Container(
@@ -403,7 +406,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -440,7 +442,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
