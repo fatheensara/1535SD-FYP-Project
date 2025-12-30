@@ -1,9 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import '../screens/student_setup_screen.dart'; // Navigate here after signup!
 import 'student_signin.dart';
-import 'student_hello.dart'; // <--- Added this import
+import 'student_hello.dart';
 import 'fade_page_route.dart';
 
 class StudentSignUpPage extends StatefulWidget {
@@ -14,8 +15,52 @@ class StudentSignUpPage extends StatefulWidget {
 }
 
 class _StudentSignUpPageState extends State<StudentSignUpPage> {
+  // --- STATE ---
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController(); // Added for safety
+  
+  bool _isLoading = false;
   bool _isPasswordObscured = true;
 
+  // --- LOGIC ---
+  Future<void> _handleSignUp() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showError("Please fill in all fields");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. Create User in Firebase
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (mounted) {
+        // 2. Success! Go to Setup Screen
+        Navigator.pushReplacement(
+          context,
+          FadePageRoute(page: const StudentSetupScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      _showError(e.message ?? "Registration Failed");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: Colors.red,
+    ));
+  }
+
+  // --- UI BUILD ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,8 +83,7 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
             ),
           ),
           onPressed: () {
-            // *** CHANGE IS HERE ***
-            // Instead of going to Sign In, we go back to the Portal (Hello Page)
+            // Navigate back to Portal Landing
             Navigator.pushReplacement(
               context,
               FadePageRoute(page: const StudentHelloPage()),
@@ -58,7 +102,7 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
       ),
       body: Stack(
         children: [
-          // 1. DYNAMIC BACKGROUND
+          // 1. DYNAMIC BACKGROUND (From File 2)
           _buildBackground(),
 
           // 2. GLASS CONTENT
@@ -67,7 +111,8 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
-                  const SizedBox(height: 100), // Spacing for AppBar
+                  const SizedBox(height: 80), 
+                  
                   // Header Text
                   Text(
                     "Join AttenDID",
@@ -108,7 +153,6 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
                           // ignore: deprecated_member_use
                           color: Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(25),
-                          // ignore: deprecated_member_use
                           border: Border.all(
                             // ignore: deprecated_member_use
                             color: Colors.white.withOpacity(0.2),
@@ -125,36 +169,26 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
                         child: Column(
                           children: [
                             _buildGlassTextField(
-                              hint: "Full Name",
-                              icon: Icons.person_outline,
-                              inputType: TextInputType.name,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildGlassTextField(
-                              hint: "Email",
+                              hint: "Email Address",
                               icon: Icons.email_outlined,
+                              controller: _emailController,
                               inputType: TextInputType.emailAddress,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildGlassTextField(
-                              hint: "Matric Number",
-                              icon: Icons.badge_outlined,
-                              inputType: TextInputType.text,
                             ),
                             const SizedBox(height: 16),
                             _buildGlassTextField(
                               hint: "Password",
                               icon: Icons.lock_outline,
+                              controller: _passwordController,
                               isPassword: true,
                             ),
-
+                            
                             const SizedBox(height: 30),
 
                             SizedBox(
                               width: double.infinity,
                               height: 55,
                               child: ElevatedButton(
-                                onPressed: _showSuccessDialog,
+                                onPressed: _isLoading ? null : _handleSignUp,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
                                   foregroundColor: Colors.purple.shade900,
@@ -163,13 +197,16 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                 ),
-                                child: Text(
-                                  "REGISTER",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                child: _isLoading 
+                                  ? const CircularProgressIndicator(strokeWidth: 2)
+                                  : Text(
+                                      "REGISTER",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
                               ),
                             ),
                           ],
@@ -219,7 +256,7 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
     );
   }
 
-  // --- HELPERS ---
+  // --- WIDGET HELPERS ---
 
   Widget _buildBackground() {
     return Container(
@@ -288,6 +325,7 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
   Widget _buildGlassTextField({
     required String hint,
     required IconData icon,
+    required TextEditingController controller,
     bool isPassword = false,
     TextInputType inputType = TextInputType.text,
   }) {
@@ -298,6 +336,7 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
         borderRadius: BorderRadius.circular(15),
       ),
       child: TextFormField(
+        controller: controller,
         obscureText: isPassword ? _isPasswordObscured : false,
         keyboardType: inputType,
         style: GoogleFonts.lato(color: Colors.white),
@@ -331,83 +370,11 @@ class _StudentSignUpPageState extends State<StudentSignUpPage> {
     );
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          // ignore: deprecated_member_use
-          backgroundColor: const Color(
-            0xFF1A1A1A,
-            // ignore: deprecated_member_use
-          ).withOpacity(0.95), // Dark theme dialog
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    // ignore: deprecated_member_use
-                    color: Colors.green.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 50,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "Verification Sent",
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  "Please check your student email to verify your matric number.",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.lato(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      Navigator.pushReplacement(
-                        context,
-                        FadePageRoute(page: const StudentSignInPage()),
-                      );
-                    },
-                    child: Text(
-                      "Back to Login",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 }
