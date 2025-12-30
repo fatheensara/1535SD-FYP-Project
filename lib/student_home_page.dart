@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// --- SCREEN IMPORTS ---
 import 'welcome.dart';
 import 'fade_page_route.dart';
 import 'student_mark_attendance_page.dart';
-import 'student_class_details_page.dart';
 import 'student_history_page.dart';
 import 'student_alerts_page.dart';
 import 'student_profile_page.dart';
+import 'screens/my_virtual_card.dart'; 
+import 'widgets/fade_slide_transition.dart'; 
+import 'services/notifications_page.dart'; 
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
@@ -18,75 +22,31 @@ class StudentHomePage extends StatefulWidget {
   State<StudentHomePage> createState() => _StudentHomePageState();
 }
 
-class _StudentHomePageState extends State<StudentHomePage> {
-  DateTime _selectedDate = DateTime.now();
-  int _currentIndex = 0; // 0=Home, 1=History, 2=Alerts, 3=Profile
+class _StudentHomePageState extends State<StudentHomePage> with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
-  // --- 1. DATA LOGIC ---
-  List<Map<String, String>> _getClassesForDate(DateTime date) {
-    int day = date.weekday;
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
 
-    // Monday (1) & Wednesday (3)
-    if (day == DateTime.monday || day == DateTime.wednesday) {
-      return [
-        {
-          "title": "CSCI 4300 - Computation",
-          "fullTitle": "CSCI 4300 - Computation and Complexity",
-          "time": "10:00 AM - 11:20 AM",
-          "lecturer": "Dr. Nurul Liyana",
-          "status": "Pending",
-          "type": "Lecture",
-        },
-        {
-          "title": "CSCI 4332 - Digital Forensics",
-          "fullTitle": "CSCI 4332 - Digital Evidence Forensics",
-          "time": "11:30 AM - 12:50 PM",
-          "lecturer": "Dr. Andi Fitriah",
-          "status": "Pending",
-          "type": "Lab",
-        },
-      ];
-    }
-    // Tuesday (2) & Thursday (4)
-    else if (day == DateTime.tuesday || day == DateTime.thursday) {
-      return [
-        {
-          "title": "CSCI 4333 - Cryptography",
-          "fullTitle": "CSCI 4333 - Cryptography",
-          "time": "11:30 AM - 12:50 PM",
-          "lecturer": "Dr. Takumi Sase",
-          "status": "Present",
-          "type": "Lecture",
-        },
-        // --- NEW SUBJECT ADDED ---
-        {
-          "title": "CSCI 4336 - Network Security",
-          "fullTitle": "CSCI 4336 - Network Security",
-          "time": "02:00 PM - 03:20 PM",
-          "lecturer": "Dr. Andi Fitriah",
-          "status": "Pending",
-          "type": "Lecture",
-        },
-      ];
-    }
-    // Friday
-    else if (day == DateTime.friday) {
-      return [
-        {
-          "title": "CSCI 4402 - Final Year Project II",
-          "fullTitle": "CSCI 4402 - Final Year Project II",
-          "time": "11:30 AM - 12:50 PM",
-          "lecturer": "Dr. Ahmad Anwar bin Zainuddin",
-          "status": "Present",
-          "type": "Lecture",
-        },
-      ];
-    }
-    // Weekends
-    else {
-      return [];
-    }
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
   }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  DateTime _selectedDate = DateTime.now();
+  int _currentIndex = 0; 
 
   void _changeDate(int days) {
     setState(() {
@@ -94,73 +54,84 @@ class _StudentHomePageState extends State<StudentHomePage> {
     });
   }
 
-  // --- 2. SMART QUICK SCAN LOGIC ---
-  void _handleQuickScan() {
-    // A. Check REAL TIME (Today)
-    DateTime now = DateTime.now();
-    List<Map<String, String>> todaysClasses = _getClassesForDate(now);
+  // --- SMART QUICK SCAN LOGIC (Updated for Demo) ---
+  Future<void> _handleQuickScan() async {
+    final now = DateTime.now();
+    final String currentDay = DateFormat('EEEE').format(now); 
+    
+    // FETCH LATEST STUDENT (Demo Logic)
+    final snapshot = await FirebaseFirestore.instance
+        .collection('student_registrations')
+        .orderBy('registeredAt', descending: true)
+        .limit(1)
+        .get();
 
-    // B. Find the first class that is still 'Pending'
-    Map<String, String> pendingClass = {};
-    try {
-      pendingClass = todaysClasses.firstWhere(
-        (cls) => cls['status'] == 'Pending',
-      );
-    } catch (e) {
-      pendingClass = {};
+    if (snapshot.docs.isEmpty) {
+      _showSnack("No student record found.", isError: true);
+      return;
     }
 
-    // C. Navigate or Show Message
-    if (pendingClass.isNotEmpty) {
-      Navigator.push(
-        context,
-        FadePageRoute(
-          page: MarkAttendancePage(className: pendingClass['title']!),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: const [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text("All caught up! No pending classes for today."),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.grey.shade800,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+    final data = snapshot.docs.first.data();
+    
+    List<Map<String, dynamic>> allClasses = [];
+    if (data['registeredClasses'] != null) {
+      for (var c in data['registeredClasses']) {
+        allClasses.add(c as Map<String, dynamic>);
+      }
     }
+
+    final todaysClasses = allClasses.where((c) => 
+      (c['day'] ?? "").toString().trim() == currentDay
+    ).toList();
+
+    if (todaysClasses.isEmpty) {
+      _showSnack("No classes scheduled for today ($currentDay).");
+      return;
+    }
+
+    final classToScan = todaysClasses.first;
+
+    Navigator.push(
+      context,
+      FadePageRoute(
+        page: MarkAttendancePage(className: classToScan['subject'] ?? "Unknown Class"),
+      ),
+    );
   }
 
-  // --- 3. UI BUILDER ---
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(isError ? Icons.error_outline : Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? Colors.red.shade800 : Colors.grey.shade800,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       extendBody: true,
-
       body: Stack(
         children: [
-          // MAIN CONTENT SWITCHER
           IndexedStack(
             index: _currentIndex,
             children: [
-              _buildScheduleView(), // Index 0: Home Dashboard
-              const StudentHistoryPage(), // Index 1: History
-              const StudentAlertsPage(), // Index 2: Alerts
-              const StudentProfilePage(), // Index 3: Profile
+              _buildScheduleView(),
+              const StudentHistoryPage(),
+              const StudentAlertsPage(),
+              const StudentProfilePage(),
             ],
           ),
-
-          // FLOATING NAV BAR (Bottom)
           Positioned(
             bottom: 20,
             left: 20,
@@ -169,33 +140,23 @@ class _StudentHomePageState extends State<StudentHomePage> {
           ),
         ],
       ),
-
-      // CENTER FLOATING BUTTON (Quick Scan)
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: _buildScanFloatingButton(),
     );
   }
 
-  // --- COMPONENT: SCHEDULE VIEW (Index 0) ---
   Widget _buildScheduleView() {
-    List<Map<String, String>> dailyClasses = _getClassesForDate(_selectedDate);
-    bool isToday = CalendarUtils.isSameDay(_selectedDate, DateTime.now());
+    String selectedDayName = DateFormat('EEEE').format(_selectedDate);
     String fullDate = DateFormat('MMMM d, y').format(_selectedDate);
-    String dayName = DateFormat('EEEE').format(_selectedDate);
+    bool isToday = CalendarUtils.isSameDay(_selectedDate, DateTime.now());
 
-    // Padding bottom 100 to prevent content hiding behind nav bar
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
       child: Column(
         children: [
-          // HEADER
+          // --- HEADER SECTION ---
           Container(
-            padding: const EdgeInsets.only(
-              top: 60,
-              left: 20,
-              right: 20,
-              bottom: 25,
-            ),
+            padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 25),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
@@ -207,215 +168,200 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 bottomRight: Radius.circular(36),
               ),
               boxShadow: [
-                BoxShadow(
-                  // ignore: deprecated_member_use
-                  color: const Color(0xFF4A00E0).withOpacity(0.4),
-                  blurRadius: 15,
-                  offset: const Offset(0, 10),
-                ),
+                BoxShadow(color: const Color(0xFF4A00E0).withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 10)),
               ],
             ),
             child: Column(
               children: [
-                // Welcome Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Welcome Back,",
-                          style: GoogleFonts.lato(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          "My Schedule",
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        Text("Welcome Back,", style: GoogleFonts.lato(color: Colors.white70, fontSize: 14)),
+                        Text("My Schedule", style: GoogleFonts.poppins(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     Container(
-                      decoration: BoxDecoration(
-                        // ignore: deprecated_member_use
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
                       child: IconButton(
-                        icon: const Icon(
-                          Icons.logout_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            FadePageRoute(page: const WelcomeScreen()),
-                            (route) => false,
-                          );
-                        },
+                        icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                        onPressed: () => Navigator.pushAndRemoveUntil(context, FadePageRoute(page: const WelcomeScreen()), (route) => false),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 25),
-
-                // Date Navigator
+                // DATE NAVIGATOR
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      onPressed: () => _changeDate(-1),
-                      icon: const Icon(
-                        Icons.chevron_left,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
+                    IconButton(onPressed: () => _changeDate(-1), icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28)),
                     Column(
                       children: [
-                        Text(
-                          dayName,
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          fullDate,
-                          style: GoogleFonts.lato(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
+                        Text(selectedDayName, style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600)),
+                        Text(fullDate, style: GoogleFonts.lato(color: Colors.white70, fontSize: 13)),
                       ],
                     ),
-                    IconButton(
-                      onPressed: () => _changeDate(1),
-                      icon: const Icon(
-                        Icons.chevron_right,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
+                    IconButton(onPressed: () => _changeDate(1), icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28)),
                   ],
                 ),
               ],
             ),
           ),
-
-          // Return to Today Button
+          
           if (!isToday)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: GestureDetector(
                 onTap: () => setState(() => _selectedDate = DateTime.now()),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.replay,
-                        size: 16,
-                        color: Colors.purple.shade700,
-                      ),
+                      Icon(Icons.replay, size: 16, color: Colors.purple.shade700),
                       const SizedBox(width: 4),
-                      Text(
-                        "Return to Today",
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.purple.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text("Return to Today", style: GoogleFonts.poppins(fontSize: 12, color: Colors.purple.shade700, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
               ),
             ),
 
-          // Class List
-          if (dailyClasses.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 50),
-              child: _buildEmptyState(),
-            )
-          else
-            ListView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: dailyClasses.length,
-              itemBuilder: (context, index) =>
-                  _buildInterestingCard(dailyClasses[index]),
-            ),
+          // --- FIXED: LISTEN TO LATEST REGISTRATION (DEMO MODE) ---
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('student_registrations')
+                .orderBy('registeredAt', descending: true)
+                .limit(1) // Always get the latest student
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Padding(padding: EdgeInsets.only(top: 50), child: CircularProgressIndicator());
+              if (snapshot.data!.docs.isEmpty) return Padding(padding: const EdgeInsets.only(top: 50), child: _buildEmptyState());
+
+              final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+
+              List<Map<String, dynamic>> allClasses = [];
+              if (data['registeredClasses'] != null) {
+                for (var c in data['registeredClasses']) {
+                  allClasses.add(c as Map<String, dynamic>);
+                }
+              }
+
+              // Filter classes for the selected day
+              final dailyClasses = allClasses.where((cls) {
+                 final classDay = cls['day']?.toString() ?? "";
+                 return classDay.trim().toLowerCase() == selectedDayName.toLowerCase();
+              }).toList();
+
+              if (dailyClasses.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 50),
+                  child: Column(
+                    children: [
+                      Icon(Icons.weekend_rounded, size: 60, color: Colors.purple.shade200),
+                      const SizedBox(height: 10),
+                      Text("No classes on $selectedDayName", style: GoogleFonts.poppins(color: Colors.grey.shade600)),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: dailyClasses.length,
+                itemBuilder: (context, index) {
+                  final cls = dailyClasses[index];
+                  
+                  return FadeSlideTransition(
+                    index: index, 
+                    child: _LiveClassCard(
+                      subject: cls['subject'] ?? "Unknown",
+                      section: cls['section'] ?? "1",
+                      defaultTime: cls['time'] ?? "TBA",
+                      defaultLecturer: cls['lecturer'] ?? "TBA",
+                    )
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  // --- COMPONENT: FLOATING NAV BAR ---
+  // ... (Keep the rest of the widgets: _buildScanFloatingButton, _buildFloatingNavBar, _buildNavItem, _buildEmptyState, CalendarUtils, _LiveClassCard as they were) ...
+  // DO NOT DELETE THE REST OF THE CODE FROM PREVIOUS RESPONSE, just replace the main class logic above.
+  
+  Widget _buildScanFloatingButton() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 45),
+      height: 70,
+      width: 70,
+      child: ScaleTransition(
+        scale: _pulseAnimation,
+        child: FloatingActionButton(
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            _handleQuickScan();
+          },
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shape: const CircleBorder(),
+          child: Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4A00E0).withOpacity(0.5),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.qr_code_scanner_rounded, size: 32, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFloatingNavBar() {
     return Container(
       height: 70,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(icon: Icons.grid_view_rounded, index: 0, label: "Home"),
-          _buildNavItem(
-            icon: Icons.history_edu_rounded,
-            index: 1,
-            label: "History",
-          ),
-
-          const SizedBox(width: 50), // Gap for the center button
-
-          _buildNavItem(
-            icon: Icons.notifications_none_rounded,
-            index: 2,
-            label: "Alerts",
-          ),
-          _buildNavItem(
-            icon: Icons.person_outline_rounded,
-            index: 3,
-            label: "Profile",
-          ),
+          _buildNavItem(icon: Icons.history_edu_rounded, index: 1, label: "History"),
+          const SizedBox(width: 50),
+          _buildNavItem(icon: Icons.notifications_none_rounded, index: 2, label: "Alerts"),
+          _buildNavItem(icon: Icons.person_outline_rounded, index: 3, label: "Profile"),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem({
-    required IconData icon,
-    required int index,
-    required String label,
-  }) {
+  Widget _buildNavItem({required IconData icon, required int index, required String label}) {
     bool isSelected = _currentIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
@@ -425,239 +371,12 @@ class _StudentHomePageState extends State<StudentHomePage> {
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.purple.shade50 : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: isSelected ? Colors.purple.shade700 : Colors.grey.shade400,
-              size: 26,
-            ),
+            decoration: BoxDecoration(color: isSelected ? Colors.purple.shade50 : Colors.transparent, borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: isSelected ? Colors.purple.shade700 : Colors.grey.shade400, size: 26),
           ),
           if (isSelected)
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: Colors.purple.shade700,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(label, style: GoogleFonts.poppins(fontSize: 10, color: Colors.purple.shade700, fontWeight: FontWeight.w600)),
         ],
-      ),
-    );
-  }
-
-  // --- COMPONENT: QUICK SCAN BUTTON ---
-  Widget _buildScanFloatingButton() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 45), // Push up to align with Dock
-      height: 70,
-      width: 70,
-      child: FloatingActionButton(
-        onPressed: _handleQuickScan, // Triggers smart scan
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        shape: const CircleBorder(),
-        child: Container(
-          width: 70,
-          height: 70,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                // ignore: deprecated_member_use
-                color: Colors.purple.withOpacity(0.4),
-                blurRadius: 15,
-                spreadRadius: 2,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.qr_code_scanner_rounded,
-            size: 32,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // --- HELPERS: CARDS & PLACEHOLDERS ---
-
-  Widget _buildInterestingCard(Map<String, String> cls) {
-    bool isPending = cls['status'] == "Pending";
-    Color statusColor = isPending ? Colors.orange : Colors.green;
-    IconData typeIcon = cls['type'] == 'Lecture'
-        ? Icons.menu_book
-        : Icons.computer;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.purple.shade100.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            // Background Faded Icon
-            Positioned(
-              right: -20,
-              top: -20,
-              child: Icon(
-                typeIcon,
-                // ignore: deprecated_member_use
-                size: 100,
-                // ignore: deprecated_member_use
-                color: Colors.grey.withOpacity(0.05),
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Row: Time & Status
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.access_time_filled_rounded,
-                              size: 14,
-                              color: Colors.purple,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              cls['time']!,
-                              style: GoogleFonts.lato(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple.shade900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          // ignore: deprecated_member_use
-                          color: statusColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          cls['status']!.toUpperCase(),
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: statusColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Class Info
-                  Text(
-                    cls['fullTitle']!,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    cls['lecturer']!,
-                    style: GoogleFonts.lato(
-                      fontSize: 14,
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Action Button
-                  InkWell(
-                    onTap: () {
-                      if (isPending) {
-                        Navigator.push(
-                          context,
-                          FadePageRoute(
-                            page: MarkAttendancePage(className: cls['title']!),
-                          ),
-                        );
-                      } else {
-                        Navigator.push(
-                          context,
-                          FadePageRoute(
-                            page: ClassDetailsPage(classTitle: cls['title']!),
-                          ),
-                        );
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        gradient: isPending
-                            ? const LinearGradient(
-                                colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
-                              )
-                            : LinearGradient(
-                                colors: [
-                                  Colors.green.shade600,
-                                  Colors.green.shade400,
-                                ],
-                              ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        isPending ? "Scan Attendance" : "View History",
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -668,10 +387,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
         children: [
           Icon(Icons.weekend_rounded, size: 60, color: Colors.purple.shade200),
           const SizedBox(height: 10),
-          Text(
-            "No Classes",
-            style: GoogleFonts.poppins(color: Colors.grey.shade600),
-          ),
+          Text("No Classes", style: GoogleFonts.poppins(color: Colors.grey.shade600)),
         ],
       ),
     );
@@ -680,8 +396,156 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
 class CalendarUtils {
   static bool isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year &&
-        date1.month == date2.month &&
-        date1.day == date2.day;
+    return date1.year == date2.year && date1.month == date2.month && date1.day == date2.day;
+  }
+}
+
+class _LiveClassCard extends StatelessWidget {
+  final String subject;
+  final String section;
+  final String defaultTime;
+  final String defaultLecturer;
+
+  const _LiveClassCard({
+    required this.subject,
+    required this.section,
+    required this.defaultTime,
+    required this.defaultLecturer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('class_schedule').doc(subject).snapshots(),
+      builder: (context, snapshot) {
+        
+        String status = "Physical";
+        String venue = "Default Venue";
+        
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final sections = List.from(data['sections'] ?? []);
+          
+          final sectionData = sections.firstWhere(
+            (s) => s['section'].toString() == section, 
+            orElse: () => null
+          );
+
+          if (sectionData != null) {
+            status = sectionData['status'] ?? "Physical";
+            venue = sectionData['venue'] ?? "Default Venue";
+          }
+        }
+
+        Color cardColor = Colors.white;
+        Color statusBadgeColor = Colors.green;
+        IconData typeIcon = Icons.menu_book;
+        bool isAttention = false;
+
+        if (status == 'Online') {
+          cardColor = Colors.blue.shade50;
+          statusBadgeColor = Colors.blue;
+          typeIcon = Icons.videocam;
+          isAttention = true;
+        } else if (status == 'Quiz') {
+          cardColor = Colors.purple.shade50;
+          statusBadgeColor = Colors.purple;
+          typeIcon = Icons.assignment;
+          isAttention = true;
+        } else if (status == 'Postponed') {
+          cardColor = Colors.orange.shade50;
+          statusBadgeColor = Colors.orange;
+          typeIcon = Icons.warning;
+          isAttention = true;
+        } else if (status == 'Cancelled') {
+          cardColor = Colors.red.shade50;
+          statusBadgeColor = Colors.red;
+          typeIcon = Icons.block;
+          isAttention = true;
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(color: Colors.purple.shade900.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
+            ],
+            border: isAttention ? Border.all(color: statusBadgeColor.withOpacity(0.3)) : Border.all(color: Colors.white, width: 1.5),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                Positioned(right: -20, top: -20, child: Icon(typeIcon, size: 100, color: statusBadgeColor.withOpacity(0.1))),
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(color: statusBadgeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                            child: Row(
+                              children: [
+                                Icon(Icons.access_time_filled_rounded, size: 14, color: statusBadgeColor),
+                                const SizedBox(width: 5),
+                                Text(defaultTime, style: GoogleFonts.lato(fontSize: 12, fontWeight: FontWeight.bold, color: statusBadgeColor)),
+                              ],
+                            ),
+                          ),
+                          if (isAttention)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(color: statusBadgeColor, borderRadius: BorderRadius.circular(8)),
+                              child: Text(status.toUpperCase(), style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                            )
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      Text(subject, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+                      Text(defaultLecturer, style: GoogleFonts.lato(fontSize: 14, color: Colors.grey.shade600)),
+                      
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
+                          const SizedBox(width: 4),
+                          Text(venue, style: GoogleFonts.lato(color: Colors.grey.shade700, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+                      
+                      if (status != 'Cancelled')
+                      InkWell(
+                        onTap: () {
+                           Navigator.push(context, FadePageRoute(page: MarkAttendancePage(className: subject)));
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)]),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text("Scan Attendance", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    );
   }
 }
