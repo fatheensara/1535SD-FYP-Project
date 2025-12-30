@@ -26,8 +26,6 @@ class _StaffAttendanceSettingsPageState
     extends State<StaffAttendanceSettingsPage> {
   bool _allowLate = true;
   bool _lockSession = false;
-
-  // Local state for UI responsiveness, synced with widget props
   late bool _soundEnabled;
   late double _volume;
 
@@ -58,7 +56,6 @@ class _StaffAttendanceSettingsPageState
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              // ignore: deprecated_member_use
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
@@ -123,20 +120,19 @@ class _StaffAttendanceSettingsPageState
 
                 const SizedBox(height: 25),
                 _buildHeader("Feedback"),
-                // SOUND TOGGLE
                 _buildSwitchTile(
                   "Sound Effects",
                   "Beep on scan success",
                   _soundEnabled,
                   (v) {
                     setState(() => _soundEnabled = v);
-                    widget.onSoundChanged(v); // Update parent
+                    widget.onSoundChanged(v); 
                   },
                   Icons.volume_up_outlined,
                   Colors.blue,
                 ),
 
-                // VOLUME SLIDER (Only show if sound is enabled)
+                // VOLUME SLIDER
                 if (_soundEnabled) ...[
                   const SizedBox(height: 10),
                   Container(
@@ -146,7 +142,6 @@ class _StaffAttendanceSettingsPageState
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
@@ -171,7 +166,7 @@ class _StaffAttendanceSettingsPageState
                           inactiveColor: Colors.grey.shade200,
                           onChanged: (newVal) {
                             setState(() => _volume = newVal);
-                            widget.onVolumeChanged(newVal); // Update parent
+                            widget.onVolumeChanged(newVal); 
                           },
                         ),
                       ],
@@ -229,13 +224,11 @@ class _StaffAttendanceSettingsPageState
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          // ignore: deprecated_member_use
                           color: Colors.red.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
                       ],
-                      // ignore: deprecated_member_use
                       border: Border.all(color: Colors.red.withOpacity(0.2)),
                     ),
                     child: Row(
@@ -243,7 +236,6 @@ class _StaffAttendanceSettingsPageState
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            // ignore: deprecated_member_use
                             color: Colors.red.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
@@ -269,7 +261,6 @@ class _StaffAttendanceSettingsPageState
                               Text(
                                 "Clear list & restart",
                                 style: GoogleFonts.lato(
-                                  // ignore: deprecated_member_use
                                   color: Colors.red.withOpacity(0.7),
                                   fontSize: 12,
                                 ),
@@ -324,7 +315,6 @@ class _StaffAttendanceSettingsPageState
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -351,7 +341,6 @@ class _StaffAttendanceSettingsPageState
         secondary: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            // ignore: deprecated_member_use
             color: iconColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
