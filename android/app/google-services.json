@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "766918308869",
+    "project_id": "attendid-61680",
+    "storage_bucket": "attendid-61680.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:766918308869:android:7d7284c0640fbf7c7d986c",
+        "android_client_info": {
+          "package_name": "com.sya.attendid"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "766918308869-51k57f7082rl9bbbh5662nqph8h4ooom.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sya.attendid",
+            "certificate_hash": "9c0f8ef0a983c9a75055711d8629429dc25be91a"
+          }
+        },
+        {
+          "client_id": "766918308869-8o77uu821dqrq199rhrk8nabk58os803.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0oMbqBgWFqtLKzvkM-URZ10Zm3--GcTk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "766918308869-8o77uu821dqrq199rhrk8nabk58os803.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "766918308869-98ddlb36ibrveah7ts49600fj3vibh35.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.attendidClean"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
