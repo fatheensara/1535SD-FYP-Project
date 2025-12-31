@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -45,7 +47,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
     bool isAvailable = await NfcManager.instance.isAvailable();
     if (!isAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❌ NFC not available on this device")));
+        const SnackBar(content: Text("❌ NFC not available on this device")),
+      );
       return;
     }
 
@@ -122,31 +125,31 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       DocumentReference newStudentRef = await FirebaseFirestore.instance
           .collection('student_registrations')
           .add({
-        'name': _nameController.text.trim(),
-        'studentId': _studentIdController.text.trim(),
-        'course': _courseController.text.trim(),
-        'enrolledSubject': _selectedSubject,
-        'section': _selectedSection,
-        'classTime': _selectedTime,
-        'classDay': _selectedDay,
-        'lecturer': _selectedLecturer,
-        'registeredClasses': _selectedSubject != null
-            ? [
-                {
-                  'subject': _selectedSubject,
-                  'section': _selectedSection,
-                  'time': _selectedTime,
-                  'day': _selectedDay,
-                  'lecturer': _selectedLecturer,
-                }
-              ]
-            : [],
-        'physicalCardUid': uid,
-        'isActive': true,
-        'deviceId': null,
-        'registeredAt': DateTime.now().toIso8601String(),
-        'registeredBy': 'admin',
-      });
+            'name': _nameController.text.trim(),
+            'studentId': _studentIdController.text.trim(),
+            'course': _courseController.text.trim(),
+            'enrolledSubject': _selectedSubject,
+            'section': _selectedSection,
+            'classTime': _selectedTime,
+            'classDay': _selectedDay,
+            'lecturer': _selectedLecturer,
+            'registeredClasses': _selectedSubject != null
+                ? [
+                    {
+                      'subject': _selectedSubject,
+                      'section': _selectedSection,
+                      'time': _selectedTime,
+                      'day': _selectedDay,
+                      'lecturer': _selectedLecturer,
+                    },
+                  ]
+                : [],
+            'physicalCardUid': uid,
+            'isActive': true,
+            'deviceId': null,
+            'registeredAt': DateTime.now().toIso8601String(),
+            'registeredBy': 'admin',
+          });
 
       if (_selectedSubject != null) {
         await newStudentRef.collection('notifications').add({
@@ -199,8 +202,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
             leading: Padding(
               padding: const EdgeInsets.only(top: 10),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new,
-                    color: Colors.black87, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.black87,
+                  size: 20,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
@@ -210,7 +216,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                 child: IconButton(
                   icon: const Icon(Icons.logout, color: Colors.redAccent),
                   onPressed: () => Navigator.pushReplacement(
-                      context, FadePageRoute(page: const AdminSignInPage())),
+                    context,
+                    FadePageRoute(page: const AdminSignInPage()),
+                  ),
                 ),
               ),
             ],
@@ -234,25 +242,31 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // --- QUICK ACTIONS GRID ---
-                  Text("Quick Actions",
-                      style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700)),
+                  Text(
+                    "Quick Actions",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
                   const SizedBox(height: 15),
                   _buildDashboardGrid(),
 
                   const SizedBox(height: 30),
 
                   // --- REGISTRATION FORM ---
-                  Text("New Student Entry",
-                      style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700)),
+                  Text(
+                    "New Student Entry",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
                   const SizedBox(height: 15),
                   _buildRegistrationCard(),
-                  
+
                   const SizedBox(height: 50), // Bottom Padding
                 ],
               ),
@@ -277,17 +291,23 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           label: "Manage Classes",
           icon: Icons.dashboard_customize,
           color: Colors.blue.shade700,
-          onTap: () => Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const AdminClassDashboard())),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminClassDashboard(),
+            ),
+          ),
         ),
         _buildGridButton(
           label: "HOD Alerts",
           icon: Icons.notifications_active,
           color: Colors.orange.shade800,
           onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const AdminNotificationsPage())),
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminNotificationsPage(),
+            ),
+          ),
         ),
         _buildGridButton(
           label: "Manage Subjects",
@@ -299,18 +319,21 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           label: "Student List",
           icon: Icons.people_alt,
           color: Colors.purple.shade700,
-          onTap: () => Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const AdminStudentList())),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminStudentList()),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildGridButton(
-      {required String label,
-      required IconData icon,
-      required Color color,
-      required VoidCallback onTap}) {
+  Widget _buildGridButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
@@ -334,7 +357,10 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
             Text(
               label,
               style: GoogleFonts.poppins(
-                  fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
           ],
         ),
@@ -346,7 +372,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
   Widget _buildRegistrationCard() {
     const List<String> courseOptions = [
       "Computer Science",
-      "Information Technology"
+      "Information Technology",
     ];
     final bool isValidCourse =
         _selectedCourse != null && courseOptions.contains(_selectedCourse);
@@ -358,9 +384,10 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.shade200,
-              blurRadius: 20,
-              offset: const Offset(0, 10))
+            color: Colors.grey.shade200,
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       child: Form(
@@ -393,32 +420,40 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                           : const Color(0xFF2D3748),
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: _isScanning
                         ? const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : Icon(
                             _cardUidController.text.isNotEmpty
                                 ? Icons.check
                                 : Icons.qr_code_scanner,
-                            color: Colors.white),
+                            color: Colors.white,
+                          ),
                   ),
                 ),
               ],
             ),
             if (_statusMessage.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text(_statusMessage,
-                  style: GoogleFonts.lato(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: _statusMessage.contains("✅")
-                          ? Colors.green
-                          : Colors.red)),
+              Text(
+                _statusMessage,
+                style: GoogleFonts.lato(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: _statusMessage.contains("✅")
+                      ? Colors.green
+                      : Colors.red,
+                ),
+              ),
             ],
 
             const SizedBox(height: 25),
@@ -429,21 +464,26 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
             _buildSectionHeader("Student Details"),
             const SizedBox(height: 15),
             _buildModernTextField(
-                controller: _nameController,
-                label: "Full Name",
-                icon: Icons.person_outline),
+              controller: _nameController,
+              label: "Full Name",
+              icon: Icons.person_outline,
+            ),
             const SizedBox(height: 15),
             _buildModernTextField(
-                controller: _studentIdController,
-                label: "Matric ID",
-                icon: Icons.badge_outlined),
+              controller: _studentIdController,
+              label: "Matric ID",
+              icon: Icons.badge_outlined,
+            ),
             const SizedBox(height: 15),
 
             // 3. Course Selection
             DropdownButtonFormField<String>(
               value: isValidCourse ? _selectedCourse : null,
               dropdownColor: Colors.white,
-              decoration: _inputDecoration("Program / Course", Icons.school_outlined),
+              decoration: _inputDecoration(
+                "Program / Course",
+                Icons.school_outlined,
+              ),
               style: GoogleFonts.poppins(color: Colors.black87),
               items: courseOptions.map((course) {
                 return DropdownMenuItem(value: course, child: Text(course));
@@ -477,7 +517,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF319795), // Teal
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 5,
                   shadowColor: const Color(0xFF319795).withOpacity(0.4),
                 ),
@@ -486,10 +527,11 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     : Text(
                         "COMPLETE REGISTRATION",
                         style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 1),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 1,
+                        ),
                       ),
               ),
             ),
@@ -534,19 +576,22 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       filled: true,
       fillColor: const Color(0xFFF7FAFC), // Very light grey
       contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-      
+
       // ✅ Corrected: borderSide used instead of border in OutlineInputBorder
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14), 
-          borderSide: BorderSide.none
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14), 
-          borderSide: BorderSide.none
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFF319795), width: 1.5), // ✅ Fixed here
+        borderSide: const BorderSide(
+          color: Color(0xFF319795),
+          width: 1.5,
+        ), // ✅ Fixed here
       ),
     );
   }
@@ -555,7 +600,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
 
   Widget _buildClassSelection() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('class_schedule').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('class_schedule')
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const LinearProgressIndicator();
 
@@ -587,9 +634,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     decoration: _inputDecoration("Subject", Icons.class_),
                     items: subjects.map((subject) {
                       return DropdownMenuItem(
-                          value: subject,
-                          child:
-                              Text(subject, overflow: TextOverflow.ellipsis));
+                        value: subject,
+                        child: Text(subject, overflow: TextOverflow.ellipsis),
+                      );
                     }).toList(),
                     onChanged: (val) {
                       setState(() {
@@ -613,7 +660,10 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.red.shade400),
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: Colors.red.shade400,
+                    ),
                     onPressed: () {
                       if (_selectedSubject == null) return;
                       _confirmDeleteSubject(context);
@@ -629,8 +679,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
             if (_selectedSubject != null && subjects.contains(_selectedSubject))
               Builder(
                 builder: (context) {
-                  final selectedDoc =
-                      docs.firstWhere((d) => d.id == _selectedSubject);
+                  final selectedDoc = docs.firstWhere(
+                    (d) => d.id == _selectedSubject,
+                  );
                   final data = selectedDoc.data() as Map<String, dynamic>;
                   final sectionsList = List.from(data['sections'] ?? []);
 
@@ -638,7 +689,8 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                   if (_selectedSection != null && _selectedDay != null) {
                     final combinedKey = "${_selectedSection}_${_selectedDay}";
                     if (sectionsList.any(
-                        (s) => "${s['section']}_${s['day']}" == combinedKey)) {
+                      (s) => "${s['section']}_${s['day']}" == combinedKey,
+                    )) {
                       currentDropdownValue = combinedKey;
                     }
                   }
@@ -647,9 +699,13 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     isExpanded: true,
                     value: currentDropdownValue,
                     dropdownColor: Colors.white,
-                    decoration: _inputDecoration("Section & Time", Icons.layers),
-                    items:
-                        sectionsList.map<DropdownMenuItem<String>>((secData) {
+                    decoration: _inputDecoration(
+                      "Section & Time",
+                      Icons.layers,
+                    ),
+                    items: sectionsList.map<DropdownMenuItem<String>>((
+                      secData,
+                    ) {
                       final section = secData['section'].toString();
                       final day = secData['day'].toString();
                       final time = secData['time'].toString();
@@ -657,15 +713,18 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
 
                       return DropdownMenuItem<String>(
                         value: uniqueKey,
-                        child: Text("Sec $section • $day • $time",
-                            style: const TextStyle(fontSize: 13),
-                            overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          "Sec $section • $day • $time",
+                          style: const TextStyle(fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) {
                       if (val == null) return;
                       final secData = sectionsList.firstWhere(
-                          (e) => "${e['section']}_${e['day']}" == val);
+                        (e) => "${e['section']}_${e['day']}" == val,
+                      );
                       setState(() {
                         _selectedSection = secData['section'];
                         _selectedDay = secData['day'];
@@ -688,14 +747,19 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Delete Subject?",
-            style: TextStyle(color: Colors.black87)),
-        content: Text("Delete '$_selectedSubject'? This cannot be undone.",
-            style: const TextStyle(color: Colors.black54)),
+        title: const Text(
+          "Delete Subject?",
+          style: TextStyle(color: Colors.black87),
+        ),
+        content: Text(
+          "Delete '$_selectedSubject'? This cannot be undone.",
+          style: const TextStyle(color: Colors.black54),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Cancel")),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
           TextButton(
             onPressed: () async {
               await FirebaseFirestore.instance
@@ -704,8 +768,9 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                   .delete();
               Navigator.pop(ctx);
               setState(() => _selectedSubject = null);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text("Subject Deleted")));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text("Subject Deleted")));
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),
@@ -726,7 +791,7 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       "Tuesday",
       "Wednesday",
       "Thursday",
-      "Friday"
+      "Friday",
     ];
 
     await showDialog(
@@ -734,11 +799,16 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Add New Class",
-              style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold, color: Colors.black87)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            "Add New Class",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -752,11 +822,14 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                 const SizedBox(height: 10),
                 _buildDialogField(lecturerCtrl, "Lecturer Name"),
                 const SizedBox(height: 15),
-                Text("Select Days:",
-                    style: TextStyle(
-                        color: Colors.teal.shade700,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13)),
+                Text(
+                  "Select Days:",
+                  style: TextStyle(
+                    color: Colors.teal.shade700,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8.0,
@@ -777,15 +850,19 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                       backgroundColor: Colors.grey.shade100,
                       selectedColor: Colors.teal.shade100,
                       labelStyle: TextStyle(
-                          color:
-                              isSelected ? Colors.teal.shade900 : Colors.black87),
+                        color: isSelected
+                            ? Colors.teal.shade900
+                            : Colors.black87,
+                      ),
                       checkmarkColor: Colors.teal,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(
-                              color: isSelected
-                                  ? Colors.teal
-                                  : Colors.grey.shade300)),
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isSelected
+                              ? Colors.teal
+                              : Colors.grey.shade300,
+                        ),
+                      ),
                     );
                   }).toList(),
                 ),
@@ -794,14 +871,18 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("Cancel",
-                    style: TextStyle(color: Colors.grey.shade600))),
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+            ),
             ElevatedButton(
               onPressed: () async {
                 if (subjectCtrl.text.isEmpty ||
                     sectionCtrl.text.isEmpty ||
-                    selectedDays.isEmpty) return;
+                    selectedDays.isEmpty)
+                  return;
 
                 List<Map<String, dynamic>> newEntries = selectedDays.map((day) {
                   return {
@@ -816,18 +897,23 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
                     .collection('class_schedule')
                     .doc(subjectCtrl.text.trim());
                 await docRef.set({
-                  'sections': FieldValue.arrayUnion(newEntries)
+                  'sections': FieldValue.arrayUnion(newEntries),
                 }, SetOptions(merge: true));
 
                 if (mounted) Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text("✅ Added ${selectedDays.length} sessions!")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("✅ Added ${selectedDays.length} sessions!"),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10))),
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               child: const Text("Save Class"),
             ),
           ],
@@ -843,14 +929,18 @@ class _AdminRegistrationScreenState extends State<AdminRegistrationScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.grey.shade600),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 15,
+        ),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300)),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300)),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
       ),
     );
   }
