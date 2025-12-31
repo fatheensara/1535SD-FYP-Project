@@ -14,7 +14,10 @@ class StudentScanActivityPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       appBar: AppBar(
-        title: Text("Scan Activity", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text(
+          "Scan Activity",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -31,6 +34,7 @@ class StudentScanActivityPage extends StatelessWidget {
               border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
               boxShadow: [
                 BoxShadow(
+                  // ignore: deprecated_member_use
                   color: Colors.black.withOpacity(0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
@@ -45,7 +49,11 @@ class StudentScanActivityPage extends StatelessWidget {
                     color: Colors.blue.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.history_toggle_off, color: Colors.blue.shade700, size: 24),
+                  child: Icon(
+                    Icons.history_toggle_off,
+                    color: Colors.blue.shade700,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 15),
                 Column(
@@ -53,11 +61,18 @@ class StudentScanActivityPage extends StatelessWidget {
                   children: [
                     Text(
                       "Recent Activity",
-                      style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
                     Text(
                       "Real-time attendance logs",
-                      style: GoogleFonts.lato(fontSize: 12, color: Colors.grey.shade600),
+                      style: GoogleFonts.lato(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                   ],
                 ),
@@ -76,34 +91,48 @@ class StudentScanActivityPage extends StatelessWidget {
                         .orderBy('timestamp', descending: true)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                      
+                      if (!snapshot.hasData)
+                        return const Center(child: CircularProgressIndicator());
+
                       final records = snapshot.data!.docs;
-                      
+
                       if (records.isEmpty) {
-                         return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.history, size: 60, color: Colors.grey.shade300),
-                                const SizedBox(height: 10),
-                                Text("No scans yet", style: GoogleFonts.poppins(color: Colors.grey)),
-                              ],
-                            ),
-                         );
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                size: 60,
+                                color: Colors.grey.shade300,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                "No scans yet",
+                                style: GoogleFonts.poppins(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        );
                       }
 
                       return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 30,
+                        ),
                         itemCount: records.length,
                         itemBuilder: (context, index) {
-                          final data = records[index].data() as Map<String, dynamic>;
-                          
+                          final data =
+                              records[index].data() as Map<String, dynamic>;
+
                           // Convert Firestore Data to UI Data
                           return _buildTimelineItem(
                             subject: data['courseName'] ?? "Unknown Class",
                             status: data['status'] ?? "Present",
-                            timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+                            timestamp:
+                                (data['timestamp'] as Timestamp?)?.toDate() ??
+                                DateTime.now(),
                             method: data['method'] ?? "NFC",
                             isLast: index == records.length - 1,
                           );
@@ -127,11 +156,11 @@ class StudentScanActivityPage extends StatelessWidget {
   }) {
     bool isSuccess = status == 'Present' || status == 'Success';
     bool isLate = status == 'Late';
-    
+
     // Color Logic
     Color statusColor;
     IconData statusIcon;
-    
+
     if (isSuccess) {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle;
@@ -155,12 +184,19 @@ class StudentScanActivityPage extends StatelessWidget {
               children: [
                 Text(
                   DateFormat('d MMM').format(timestamp),
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.black87,
+                  ),
                   textAlign: TextAlign.right,
                 ),
                 Text(
                   DateFormat('h:mm a').format(timestamp),
-                  style: GoogleFonts.lato(fontSize: 11, color: Colors.grey.shade600),
+                  style: GoogleFonts.lato(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                  ),
                   textAlign: TextAlign.right,
                 ),
               ],
@@ -184,6 +220,7 @@ class StudentScanActivityPage extends StatelessWidget {
                     border: Border.all(color: statusColor, width: 3),
                     boxShadow: [
                       BoxShadow(
+                        // ignore: deprecated_member_use
                         color: statusColor.withOpacity(0.2),
                         blurRadius: 6,
                         spreadRadius: 2,
@@ -193,7 +230,9 @@ class StudentScanActivityPage extends StatelessWidget {
                 ),
                 // The Line
                 Expanded(
-                  child: isLast ? Container() : Container(width: 2, color: Colors.grey.shade300),
+                  child: isLast
+                      ? Container()
+                      : Container(width: 2, color: Colors.grey.shade300),
                 ),
               ],
             ),
@@ -209,6 +248,7 @@ class StudentScanActivityPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
+                      // ignore: deprecated_member_use
                       color: Colors.black.withOpacity(0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
@@ -216,6 +256,7 @@ class StudentScanActivityPage extends StatelessWidget {
                   ],
                   border: isSuccess
                       ? Border.all(color: Colors.transparent)
+                      // ignore: deprecated_member_use
                       : Border.all(color: statusColor.withOpacity(0.3)),
                 ),
                 child: Padding(
@@ -230,13 +271,21 @@ class StudentScanActivityPage extends StatelessWidget {
                           Expanded(
                             child: Text(
                               subject,
-                              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
+                              // ignore: deprecated_member_use
                               color: statusColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -246,7 +295,11 @@ class StudentScanActivityPage extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   status.toUpperCase(),
-                                  style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: statusColor,
+                                  ),
                                 ),
                               ],
                             ),
@@ -260,13 +313,16 @@ class StudentScanActivityPage extends StatelessWidget {
                         children: [
                           Icon(
                             method == 'NFC' ? Icons.nfc : Icons.qr_code,
-                            size: 14, 
-                            color: Colors.grey.shade400
+                            size: 14,
+                            color: Colors.grey.shade400,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             "Verified via $method",
-                            style: GoogleFonts.lato(fontSize: 12, color: Colors.grey.shade600),
+                            style: GoogleFonts.lato(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ],
                       ),
