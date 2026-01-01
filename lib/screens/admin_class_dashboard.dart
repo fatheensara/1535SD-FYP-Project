@@ -17,18 +17,29 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
   Future<int> _getStudentCount(String subject, String section) async {
     // Simplified count for UI responsiveness
     // In a real app, store 'enrolledCount' directly in the class document to avoid heavy queries
-    final allStudents = await FirebaseFirestore.instance.collection('student_registrations').get();
+    final allStudents = await FirebaseFirestore.instance
+        .collection('student_registrations')
+        .get();
     int count = 0;
     for (var doc in allStudents.docs) {
       final classes = List.from(doc.data()['registeredClasses'] ?? []);
-      if (classes.any((c) => c['subject'] == subject && c['section'] == section)) {
+      if (classes.any(
+        (c) => c['subject'] == subject && c['section'] == section,
+      )) {
         count++;
       }
     }
     return count;
   }
 
-  Future<void> _updateClassStatus(String docId, List<dynamic> allSections, int sectionIndex, Map<String, dynamic> currentSection, String newStatus, String newVenue) async {
+  Future<void> _updateClassStatus(
+    String docId,
+    List<dynamic> allSections,
+    int sectionIndex,
+    Map<String, dynamic> currentSection,
+    String newStatus,
+    String newVenue,
+  ) async {
     currentSection['status'] = newStatus;
     currentSection['venue'] = newVenue;
     allSections[sectionIndex] = currentSection;
@@ -42,11 +53,12 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
     if (newStatus != "Physical" || newVenue != "Default") {
       await FirebaseFirestore.instance.collection('admin_notifications').add({
         'title': "Class Change Alert",
-        'message': "$docId (Sec ${currentSection['section']}) changed to $newStatus.",
+        'message':
+            "$docId (Sec ${currentSection['section']}) changed to $newStatus.",
         'type': newStatus == 'Cancelled' ? 'Urgent' : 'Info',
         'time': DateTime.now().toIso8601String(),
         'isRead': false,
-        'target': 'HOD'
+        'target': 'HOD',
       });
     }
   }
@@ -56,7 +68,13 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FE), // Soft Blue-Grey
       appBar: AppBar(
-        title: Text("Class Dashboard", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black87)),
+        title: Text(
+          "Class Dashboard",
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
@@ -65,13 +83,17 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: TextField(
-              onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
+              onChanged: (val) =>
+                  setState(() => _searchQuery = val.toLowerCase()),
               decoration: InputDecoration(
                 hintText: "Search Subject Code (e.g. CSCI)...",
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 filled: true,
                 fillColor: const Color(0xFFF4F7FE),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
             ),
@@ -79,9 +101,16 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('class_schedule').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('class_schedule')
+            .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No classes found"));
+          }
 
           // Filter Logic
           final allDocs = snapshot.data!.docs.where((doc) {
@@ -89,7 +118,12 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
           }).toList();
 
           if (allDocs.isEmpty) {
-            return Center(child: Text("No classes found", style: GoogleFonts.poppins(color: Colors.grey)));
+            return Center(
+              child: Text(
+                "No classes found",
+                style: GoogleFonts.poppins(color: Colors.grey),
+              ),
+            );
           }
 
           return ListView.builder(
@@ -97,8 +131,10 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
             itemCount: allDocs.length,
             itemBuilder: (context, index) {
               final doc = allDocs[index];
-              final sections = List<Map<String, dynamic>>.from(doc['sections'] ?? []);
-              
+              final sections = List<Map<String, dynamic>>.from(
+                doc['sections'] ?? [],
+              );
+
               return _buildExpandableSubjectCard(doc.id, sections);
             },
           );
@@ -108,10 +144,15 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
   }
 
   // --- NEW EXPANDABLE CARD DESIGN ---
-  Widget _buildExpandableSubjectCard(String subjectName, List<Map<String, dynamic>> sections) {
+  Widget _buildExpandableSubjectCard(
+    String subjectName,
+    List<Map<String, dynamic>> sections,
+  ) {
     // Calculate Summary Stats
     int totalSections = sections.length;
-    bool hasIssues = sections.any((s) => (s['status'] ?? "Physical") != "Physical");
+    bool hasIssues = sections.any(
+      (s) => (s['status'] ?? "Physical") != "Physical",
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -126,8 +167,8 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            Icons.book, 
-            color: hasIssues ? Colors.orange : Colors.blue
+            Icons.book,
+            color: hasIssues ? Colors.orange : Colors.blue,
           ),
         ),
         title: Text(
@@ -138,26 +179,45 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
           "$totalSections Sections Enrolled",
           style: GoogleFonts.lato(color: Colors.grey.shade600),
         ),
-        trailing: hasIssues 
-          ? const Icon(Icons.warning_amber_rounded, color: Colors.orange)
-          : const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-        
+        trailing: hasIssues
+            ? const Icon(Icons.warning_amber_rounded, color: Colors.orange)
+            : const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+
         children: sections.asMap().entries.map((entry) {
-          return _buildSectionRow(subjectName, subjectName, sections, entry.key, entry.value);
+          return _buildSectionRow(
+            subjectName,
+            subjectName,
+            sections,
+            entry.key,
+            entry.value,
+          );
         }).toList(),
       ),
     );
   }
 
-  Widget _buildSectionRow(String docId, String subjectName, List<dynamic> allSections, int index, Map<String, dynamic> data) {
+  Widget _buildSectionRow(
+    String docId,
+    String subjectName,
+    List<dynamic> allSections,
+    int index,
+    Map<String, dynamic> data,
+  ) {
     String status = data['status'] ?? "Physical";
     Color statusColor;
-    
+
     switch (status) {
-      case 'Online': statusColor = Colors.blue; break;
-      case 'Cancelled': statusColor = Colors.red; break;
-      case 'Postponed': statusColor = Colors.orange; break;
-      default: statusColor = Colors.green;
+      case 'Online':
+        statusColor = Colors.blue;
+        break;
+      case 'Cancelled':
+        statusColor = Colors.red;
+        break;
+      case 'Postponed':
+        statusColor = Colors.orange;
+        break;
+      default:
+        statusColor = Colors.green;
     }
 
     return Container(
@@ -176,27 +236,52 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
             ),
             child: Column(
               children: [
-                Text("SEC", style: GoogleFonts.poppins(fontSize: 8, color: Colors.grey)),
-                Text("${data['section']}", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  "SEC",
+                  style: GoogleFonts.poppins(fontSize: 8, color: Colors.grey),
+                ),
+                Text(
+                  "${data['section']}",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(width: 15),
-          
+
           // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("${data['day']} • ${data['time']}", style: GoogleFonts.lato(fontWeight: FontWeight.bold, fontSize: 13)),
-                Text(data['lecturer'] ?? "TBA", style: GoogleFonts.lato(color: Colors.grey.shade600, fontSize: 12)),
-                
+                Text(
+                  "${data['day']} • ${data['time']}",
+                  style: GoogleFonts.lato(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  data['lecturer'] ?? "TBA",
+                  style: GoogleFonts.lato(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
+                ),
+
                 // Student Count
                 FutureBuilder<int>(
                   future: _getStudentCount(subjectName, data['section']),
                   builder: (context, snap) => Text(
-                    "${snap.data ?? '-'} Students", 
-                    style: GoogleFonts.lato(color: Colors.teal, fontSize: 11, fontWeight: FontWeight.bold)
+                    "${snap.data ?? '-'} Students",
+                    style: GoogleFonts.lato(
+                      color: Colors.teal,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -209,58 +294,105 @@ class _AdminClassDashboardState extends State<AdminClassDashboard> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                child: Text(status.toUpperCase(), style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(
+                  // ignore: deprecated_member_use
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  status.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () => _showUpdateDialog(docId, allSections, index, data),
                 child: const Icon(Icons.edit_note, color: Colors.grey),
-              )
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
-  void _showUpdateDialog(String docId, List<dynamic> allSections, int index, Map<String, dynamic> data) {
+  void _showUpdateDialog(
+    String docId,
+    List<dynamic> allSections,
+    int index,
+    Map<String, dynamic> data,
+  ) {
     final venueCtrl = TextEditingController(text: data['venue'] ?? "");
     String selectedStatus = data['status'] ?? "Physical";
-    List<String> statuses = ["Physical", "Online", "Quiz", "Postponed", "Cancelled"];
+    List<String> statuses = [
+      "Physical",
+      "Online",
+      "Quiz",
+      "Postponed",
+      "Cancelled",
+    ];
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
           title: const Text("Update Class"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: selectedStatus,
-                decoration: const InputDecoration(labelText: "Status", border: OutlineInputBorder()),
-                items: statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                initialValue: statuses.contains(selectedStatus)
+                    ? selectedStatus
+                    : statuses.first,
+                decoration: const InputDecoration(
+                  labelText: "Status",
+                  border: OutlineInputBorder(),
+                ),
+                items: statuses
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
                 onChanged: (val) => setState(() => selectedStatus = val!),
               ),
               const SizedBox(height: 15),
               TextField(
                 controller: venueCtrl,
-                decoration: const InputDecoration(labelText: "Venue / Link", border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: "Venue / Link",
+                  border: OutlineInputBorder(),
+                ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel"),
+            ),
             ElevatedButton(
               onPressed: () async {
-                await _updateClassStatus(docId, allSections, index, data, selectedStatus, venueCtrl.text);
+                await _updateClassStatus(
+                  docId,
+                  allSections,
+                  index,
+                  data,
+                  selectedStatus,
+                  venueCtrl.text,
+                );
                 if (context.mounted) Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Class Updated")));
+
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text("Class Updated")));
               },
               child: const Text("Save"),
-            )
+            ),
           ],
         ),
       ),

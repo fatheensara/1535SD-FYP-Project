@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // ✅ Import is correct
 
 // Your existing imports
 import 'student_forgot_password_page.dart';
@@ -23,7 +23,7 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
   // --- LOGIC STATE ---
   bool _isLogin = true; // Toggle: Login vs Register
   bool _isLoading = false;
-  
+
   // --- UI STATE ---
   bool _rememberMe = false;
   bool _isPasswordObscured = true; // Added for Eye Icon
@@ -51,10 +51,11 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
     setState(() => _isLoading = true);
 
     try {
-      final UserCredential result = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final UserCredential result = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
       if (result.user != null && mounted) {
         await _checkStudentProfile(result.user!);
@@ -75,10 +76,11 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
     setState(() => _isLoading = true);
 
     try {
-      final UserCredential result = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final UserCredential result = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
       if (result.user != null && mounted) {
         // Success! New users go to Setup
@@ -103,13 +105,16 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
         return;
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // ✅ FIX: Removed 'accessToken' line here. Only idToken is needed.
       final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential result = await FirebaseAuth.instance.signInWithCredential(credential);
+      final UserCredential result = await FirebaseAuth.instance
+          .signInWithCredential(credential);
 
       if (result.user != null && mounted) {
         await _checkStudentProfile(result.user!);
@@ -122,9 +127,9 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
   }
 
   Future<void> _checkStudentProfile(User user) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Checking profile...')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Checking profile...')));
 
     try {
       final studentDoc = await FirebaseFirestore.instance
@@ -146,7 +151,9 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
         Navigator.push(
           context,
           FadePageRoute(
-            page: const StudentSetupScreen(isFromGoogle: true), // <--- Pass true here
+            page: const StudentSetupScreen(
+              isFromGoogle: true,
+            ), // <--- Pass true here
           ),
         );
       }
@@ -157,19 +164,23 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
 
   void _handleAuthError(FirebaseAuthException e) {
     String msg = 'Authentication failed.';
-    if (e.code == 'user-not-found') msg = 'No user found with this email.';
-    else if (e.code == 'wrong-password') msg = 'Incorrect password.';
-    else if (e.code == 'email-already-in-use') msg = 'Email is already registered.';
-    else if (e.code == 'weak-password') msg = 'Password is too weak.';
-    else if (e.code == 'invalid-email') msg = 'Invalid email address.';
+    if (e.code == 'user-not-found')
+      msg = 'No user found with this email.';
+    else if (e.code == 'wrong-password')
+      msg = 'Incorrect password.';
+    else if (e.code == 'email-already-in-use')
+      msg = 'Email is already registered.';
+    else if (e.code == 'weak-password')
+      msg = 'Password is too weak.';
+    else if (e.code == 'invalid-email')
+      msg = 'Invalid email address.';
     _showError(msg);
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: Colors.red,
-    ));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   // ---------------------------------------------------------
@@ -190,7 +201,11 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.white,
+            ),
           ),
           onPressed: () => Navigator.pushReplacement(
             context,
@@ -214,7 +229,8 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                   children: [
                     // --- LOGO ---
                     Container(
-                      height: 80, width: 80,
+                      height: 80,
+                      width: 80,
                       decoration: BoxDecoration(
                         // ignore: deprecated_member_use
                         color: Colors.white.withOpacity(0.1),
@@ -232,7 +248,11 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.school_rounded, size: 40, color: Colors.white),
+                      child: const Icon(
+                        Icons.school_rounded,
+                        size: 40,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 20),
 
@@ -254,8 +274,13 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                       ),
                     ),
                     Text(
-                      _isLogin ? "Sign in to access your classes" : "Register to start attendance",
-                      style: GoogleFonts.lato(fontSize: 14, color: Colors.white70),
+                      _isLogin
+                          ? "Sign in to access your classes"
+                          : "Register to start attendance",
+                      style: GoogleFonts.lato(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
                     ),
                     const SizedBox(height: 30),
 
@@ -284,7 +309,7 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                                 action: TextInputAction.next,
                               ),
                               const SizedBox(height: 20),
-                              
+
                               // PASSWORD FIELD (With Visibility Toggle)
                               _buildGlassTextField(
                                 hint: "Password",
@@ -297,32 +322,54 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
 
                               if (_isLogin)
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     GestureDetector(
-                                      onTap: () => setState(() => _rememberMe = !_rememberMe),
+                                      onTap: () => setState(
+                                        () => _rememberMe = !_rememberMe,
+                                      ),
                                       child: Row(
                                         children: [
                                           SizedBox(
-                                            height: 24, width: 24,
+                                            height: 24,
+                                            width: 24,
                                             child: Checkbox(
                                               value: _rememberMe,
-                                              onChanged: (val) => setState(() => _rememberMe = val!),
+                                              onChanged: (val) => setState(
+                                                () => _rememberMe = val!,
+                                              ),
                                               activeColor: Colors.white,
-                                              checkColor: Colors.purple.shade900,
-                                              side: const BorderSide(color: Colors.white70, width: 1.5),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                              checkColor:
+                                                  Colors.purple.shade900,
+                                              side: const BorderSide(
+                                                color: Colors.white70,
+                                                width: 1.5,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
-                                          Text("Remember", style: GoogleFonts.lato(color: Colors.white, fontSize: 13)),
+                                          Text(
+                                            "Remember",
+                                            style: GoogleFonts.lato(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
                                     GestureDetector(
                                       onTap: () => Navigator.push(
                                         context,
-                                        FadePageRoute(page: const StudentForgotPasswordPage()),
+                                        FadePageRoute(
+                                          page:
+                                              const StudentForgotPasswordPage(),
+                                        ),
                                       ),
                                       child: Text(
                                         "Forgot Password?",
@@ -347,12 +394,17 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     foregroundColor: Colors.purple.shade900,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
                                   ),
                                   child: _isLoading
                                       ? const SizedBox(
-                                          height: 20, width: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
                                         )
                                       : Text(
                                           _isLogin ? "LOG IN" : "SIGN UP",
@@ -380,7 +432,9 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                         onPressed: _handleGoogleLogin,
                         icon: const Icon(Icons.login, color: Colors.white),
                         label: Text(
-                          _isLogin ? "Sign in with Google" : "Sign up with Google",
+                          _isLogin
+                              ? "Sign in with Google"
+                              : "Sign up with Google",
                           style: GoogleFonts.lato(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -389,7 +443,9 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                         ),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white30),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                           // ignore: deprecated_member_use
                           backgroundColor: Colors.white.withOpacity(0.05),
                         ),
@@ -403,7 +459,9 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          _isLogin ? "Don't have an account? " : "Already have an account? ",
+                          _isLogin
+                              ? "Don't have an account? "
+                              : "Already have an account? ",
                           style: GoogleFonts.lato(color: Colors.white70),
                         ),
                         GestureDetector(
@@ -521,21 +579,23 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
       child: TextField(
         controller: controller,
         obscureText: isPassword ? _isPasswordObscured : false,
-        
+
         // ✅ FIX: Assign the parameter to the property
-        textInputAction: action, 
-        
+        textInputAction: action,
+
         style: GoogleFonts.lato(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.lato(color: Colors.white60, fontSize: 16),
           prefixIcon: Icon(icon, color: Colors.white70),
-          
+
           // Eye Icon Logic
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
-                    _isPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                    _isPasswordObscured
+                        ? Icons.visibility_off
+                        : Icons.visibility,
                     color: Colors.white54,
                     size: 20,
                   ),
@@ -546,9 +606,12 @@ class _StudentSignInPageState extends State<StudentSignInPage> {
                   },
                 )
               : null,
-          
+
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
           isDense: true,
         ),
       ),

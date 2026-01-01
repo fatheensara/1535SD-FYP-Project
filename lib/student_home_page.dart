@@ -57,25 +57,36 @@ class _StudentHomePageState extends State<StudentHomePage>
     });
   }
 
-  // --- SMART QUICK SCAN LOGIC (Updated for Demo) ---
+  // --- SMART QUICK SCAN LOGIC (REAL USER) ---
   Future<void> _handleQuickScan() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showSnack("Please log in first.", isError: true);
+      return;
+    }
+
     final now = DateTime.now();
     final String currentDay = DateFormat('EEEE').format(now);
 
-    // FETCH LATEST STUDENT (Demo Logic)
+    // 1. Fetch THIS student's record using their email
+    // (Assumes 'student_registrations' stores the 'email' field)
     final snapshot = await FirebaseFirestore.instance
         .collection('student_registrations')
-        .orderBy('registeredAt', descending: true)
+        .where('email', isEqualTo: user.email)
         .limit(1)
         .get();
 
     if (snapshot.docs.isEmpty) {
-      _showSnack("No student record found.", isError: true);
+      _showSnack(
+        "Student profile not found. Please contact admin.",
+        isError: true,
+      );
       return;
     }
 
     final data = snapshot.docs.first.data();
 
+    // 2. Get their registered classes
     List<Map<String, dynamic>> allClasses = [];
     if (data['registeredClasses'] != null) {
       for (var c in data['registeredClasses']) {
@@ -83,15 +94,18 @@ class _StudentHomePageState extends State<StudentHomePage>
       }
     }
 
+    // 3. Check if they have a class TODAY
     final todaysClasses = allClasses
         .where((c) => (c['day'] ?? "").toString().trim() == currentDay)
         .toList();
 
     if (todaysClasses.isEmpty) {
-      _showSnack("No classes scheduled for today ($currentDay).");
+      _showSnack("You have no classes scheduled for today ($currentDay).");
       return;
     }
 
+    // 4. Proceed to Scan
+    // (If multiple classes, we pick the first one for the Quick Button)
     final classToScan = todaysClasses.first;
 
     Navigator.push(
@@ -158,6 +172,9 @@ class _StudentHomePageState extends State<StudentHomePage>
     String fullDate = DateFormat('MMMM d, y').format(_selectedDate);
     bool isToday = CalendarUtils.isSameDay(_selectedDate, DateTime.now());
 
+    // Get Current User
+    final user = FirebaseAuth.instance.currentUser;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
       child: Column(
@@ -196,13 +213,45 @@ class _StudentHomePageState extends State<StudentHomePage>
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Welcome Back,",
-                          style: GoogleFonts.lato(
-                            color: Colors.white70,
-                            fontSize: 14,
+                        // --- DYNAMIC NAME FETCHING ---
+                        if (user != null)
+                          StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('student_registrations')
+                                .where('email', isEqualTo: user.email)
+                                .limit(1)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              String displayName = "Student"; // Default
+                              if (snapshot.hasData &&
+                                  snapshot.data!.docs.isNotEmpty) {
+                                final data =
+                                    snapshot.data!.docs.first.data()
+                                        as Map<String, dynamic>;
+                                // Assuming 'name' or 'fullName' is the field key
+                                displayName =
+                                    data['name'] ??
+                                    data['fullName'] ??
+                                    "Student";
+                              }
+
+                              return Text(
+                                "Welcome Back, $displayName",
+                                style: GoogleFonts.lato(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              );
+                            },
+                          )
+                        else
+                          Text(
+                            "Welcome,",
+                            style: GoogleFonts.lato(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
                         Text(
                           "My Schedule",
                           style: GoogleFonts.poppins(
@@ -223,11 +272,15 @@ class _StudentHomePageState extends State<StudentHomePage>
                           Icons.logout_rounded,
                           color: Colors.white,
                         ),
-                        onPressed: () => Navigator.pushAndRemoveUntil(
-                          context,
-                          FadePageRoute(page: const WelcomeScreen()),
-                          (route) => false,
-                        ),
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          if (!mounted) return;
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            FadePageRoute(page: const WelcomeScreen()),
+                            (route) => false,
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -315,90 +368,102 @@ class _StudentHomePageState extends State<StudentHomePage>
               ),
             ),
 
-          // --- FIXED: LISTEN TO LATEST REGISTRATION (DEMO MODE) ---
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('student_registrations')
-                .orderBy('registeredAt', descending: true)
-                .limit(1) // Always get the latest student
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData)
-                return const Padding(
-                  padding: EdgeInsets.only(top: 50),
-                  child: CircularProgressIndicator(),
-                );
-              if (snapshot.data!.docs.isEmpty)
-                return Padding(
-                  padding: const EdgeInsets.only(top: 50),
-                  child: _buildEmptyState(),
-                );
-
-              final data =
-                  snapshot.data!.docs.first.data() as Map<String, dynamic>;
-
-              List<Map<String, dynamic>> allClasses = [];
-              if (data['registeredClasses'] != null) {
-                for (var c in data['registeredClasses']) {
-                  allClasses.add(c as Map<String, dynamic>);
+          // --- FETCH SCHEDULE FOR LOGGED IN USER ---
+          if (user == null)
+            const Padding(
+              padding: EdgeInsets.only(top: 50),
+              child: Text("Please log in to view schedule."),
+            )
+          else
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('student_registrations')
+                  .where(
+                    'email',
+                    isEqualTo: user.email,
+                  ) // Filter by logged in email
+                  .limit(1)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 50),
+                    child: CircularProgressIndicator(),
+                  );
                 }
-              }
+                if (snapshot.data!.docs.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 50),
+                    child: _buildEmptyState(message: "Profile not found"),
+                  );
+                }
 
-              // Filter classes for the selected day
-              final dailyClasses = allClasses.where((cls) {
-                final classDay = cls['day']?.toString() ?? "";
-                return classDay.trim().toLowerCase() ==
-                    selectedDayName.toLowerCase();
-              }).toList();
+                final data =
+                    snapshot.data!.docs.first.data() as Map<String, dynamic>;
 
-              if (dailyClasses.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 50),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.weekend_rounded,
-                        size: 60,
-                        color: Colors.purple.shade200,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "No classes on $selectedDayName",
-                        style: GoogleFonts.poppins(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                );
-              }
+                List<Map<String, dynamic>> allClasses = [];
+                if (data['registeredClasses'] != null) {
+                  for (var c in data['registeredClasses']) {
+                    allClasses.add(c as Map<String, dynamic>);
+                  }
+                }
 
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: dailyClasses.length,
-                itemBuilder: (context, index) {
-                  final cls = dailyClasses[index];
+                // Filter classes for the selected day
+                final dailyClasses = allClasses.where((cls) {
+                  final classDay = cls['day']?.toString() ?? "";
+                  return classDay.trim().toLowerCase() ==
+                      selectedDayName.toLowerCase();
+                }).toList();
 
-                  return FadeSlideTransition(
-                    index: index,
-                    child: _LiveClassCard(
-                      subject: cls['subject'] ?? "Unknown",
-                      section: cls['section'] ?? "1",
-                      defaultTime: cls['time'] ?? "TBA",
-                      defaultLecturer: cls['lecturer'] ?? "TBA",
+                if (dailyClasses.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 50),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.weekend_rounded,
+                          size: 60,
+                          color: Colors.purple.shade200,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "No classes on $selectedDayName",
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ),
                   );
-                },
-              );
-            },
-          ),
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: dailyClasses.length,
+                  itemBuilder: (context, index) {
+                    final cls = dailyClasses[index];
+
+                    return FadeSlideTransition(
+                      index: index,
+                      child: _LiveClassCard(
+                        subject: cls['subject'] ?? "Unknown",
+                        section: cls['section'] ?? "1",
+                        defaultTime: cls['time'] ?? "TBA",
+                        defaultLecturer: cls['lecturer'] ?? "TBA",
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
         ],
       ),
     );
   }
 
-  // ... (Keep the rest of the widgets: _buildScanFloatingButton, _buildFloatingNavBar, _buildNavItem, _buildEmptyState, CalendarUtils, _LiveClassCard as they were) ...
-  // DO NOT DELETE THE REST OF THE CODE FROM PREVIOUS RESPONSE, just replace the main class logic above.
+  // --- Widgets: _buildScanFloatingButton, _buildFloatingNavBar, _buildNavItem, _buildEmptyState ---
 
   Widget _buildScanFloatingButton() {
     return Container(
@@ -522,14 +587,14 @@ class _StudentHomePageState extends State<StudentHomePage>
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = "No Classes"}) {
     return Center(
       child: Column(
         children: [
           Icon(Icons.weekend_rounded, size: 60, color: Colors.purple.shade200),
           const SizedBox(height: 10),
           Text(
-            "No Classes",
+            message,
             style: GoogleFonts.poppins(color: Colors.grey.shade600),
           ),
         ],
@@ -713,7 +778,6 @@ class _LiveClassCard extends StatelessWidget {
                           color: Colors.grey.shade600,
                         ),
                       ),
-
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -732,9 +796,7 @@ class _LiveClassCard extends StatelessWidget {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 20),
-
                       if (status != 'Cancelled')
                         InkWell(
                           onTap: () {
@@ -750,7 +812,7 @@ class _LiveClassCard extends StatelessWidget {
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
+                              gradient: const LinearGradient(
                                 colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
                               ),
                               borderRadius: BorderRadius.circular(16),

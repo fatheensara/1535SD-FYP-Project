@@ -1,10 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
-// --- PACKAGES FOR EXPORTING ---
-import 'package:excel/excel.dart';
+import 'package:intl/intl.dart';
+
+// --- PACKAGES ---
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// --- PDF PACKAGES ---
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+// ignore: unused_import
+import 'package:printing/printing.dart';
 
 class StaffReportsPitsSect1Page extends StatefulWidget {
   const StaffReportsPitsSect1Page({super.key});
@@ -16,60 +25,62 @@ class StaffReportsPitsSect1Page extends StatefulWidget {
 
 class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
   // Filter State
-  String _selectedFilter = 'All'; // Options: 'All', 'Warning', 'Barred'
+  String _selectedFilter = 'All';
+  bool _isSending = false;
 
-  // --- MOCK DATA: 45 STUDENTS ---
+  // --- MOCK DATA ---
   final List<Map<String, dynamic>> _allStudents = [
     {"name": "Aaron Lim", "w1_7": 95.0, "w1_14": 94.0},
     {"name": "Amira H.", "w1_7": 82.0, "w1_14": 85.0},
-    {"name": "Benjamin T.", "w1_7": 65.0, "w1_14": 60.0}, // Barred
-    {"name": "Cassandra", "w1_7": 78.0, "w1_14": 81.0}, // Warning -> Recovered
+    {"name": "Benjamin T.", "w1_7": 65.0, "w1_14": 60.0},
+    {"name": "Cassandra", "w1_7": 78.0, "w1_14": 81.0},
     {"name": "Dinesh K.", "w1_7": 88.0, "w1_14": 90.0},
-    {"name": "Elena R.", "w1_7": 45.0, "w1_14": 40.0}, // Barred
+    {"name": "Elena R.", "w1_7": 45.0, "w1_14": 40.0},
     {"name": "Faizal M.", "w1_7": 92.0, "w1_14": 95.0},
-    {"name": "Grace Lee", "w1_7": 75.0, "w1_14": 80.0}, // Warning -> Recovered
-    {"name": "Hafiz S.", "w1_7": 70.0, "w1_14": 65.0}, // Barred
+    {"name": "Grace Lee", "w1_7": 75.0, "w1_14": 80.0},
+    {"name": "Hafiz S.", "w1_7": 70.0, "w1_14": 65.0},
     {"name": "Iris Wong", "w1_7": 98.0, "w1_14": 97.0},
     {"name": "Jason C.", "w1_7": 85.0, "w1_14": 84.0},
-    {"name": "Khairul A.", "w1_7": 55.0, "w1_14": 50.0}, // Barred
+    {"name": "Khairul A.", "w1_7": 55.0, "w1_14": 50.0},
     {"name": "Latifah", "w1_7": 90.0, "w1_14": 92.0},
-    {"name": "Michelle", "w1_7": 79.0, "w1_14": 82.0}, // Warning -> Recovered
+    {"name": "Michelle", "w1_7": 79.0, "w1_14": 82.0},
     {"name": "Nathan", "w1_7": 88.0, "w1_14": 89.0},
     {"name": "Olivia P.", "w1_7": 94.0, "w1_14": 93.0},
-    {"name": "Peter Tan", "w1_7": 60.0, "w1_14": 58.0}, // Barred
+    {"name": "Peter Tan", "w1_7": 60.0, "w1_14": 58.0},
     {"name": "Qayla R.", "w1_7": 91.0, "w1_14": 90.0},
-    {"name": "Ramesh V.", "w1_7": 76.0, "w1_14": 85.0}, // Warning -> Recovered
+    {"name": "Ramesh V.", "w1_7": 76.0, "w1_14": 85.0},
     {"name": "Sarah J.", "w1_7": 100.0, "w1_14": 99.0},
     {"name": "Taufiq H.", "w1_7": 82.0, "w1_14": 80.0},
-    {"name": "Umairah", "w1_7": 74.0, "w1_14": 72.0}, // Barred
+    {"name": "Umairah", "w1_7": 74.0, "w1_14": 72.0},
     {"name": "Victor L.", "w1_7": 89.0, "w1_14": 91.0},
-    {"name": "Wei Ming", "w1_7": 68.0, "w1_14": 65.0}, // Barred
+    {"name": "Wei Ming", "w1_7": 68.0, "w1_14": 65.0},
     {"name": "Xandra", "w1_7": 93.0, "w1_14": 94.0},
     {"name": "Yusri B.", "w1_7": 85.0, "w1_14": 86.0},
-    {"name": "Zahra K.", "w1_7": 77.0, "w1_14": 81.0}, // Warning -> Recovered
+    {"name": "Zahra K.", "w1_7": 77.0, "w1_14": 81.0},
     {"name": "Adam Lee", "w1_7": 96.0, "w1_14": 95.0},
-    {"name": "Brian Goh", "w1_7": 50.0, "w1_14": 48.0}, // Barred
+    {"name": "Brian Goh", "w1_7": 50.0, "w1_14": 48.0},
     {"name": "Cindy T.", "w1_7": 88.0, "w1_14": 87.0},
     {"name": "David C.", "w1_7": 92.0, "w1_14": 91.0},
-    {"name": "Esther Y.", "w1_7": 75.0, "w1_14": 78.0}, // Warning -> Risk
+    {"name": "Esther Y.", "w1_7": 75.0, "w1_14": 78.0},
     {"name": "Farhan Z.", "w1_7": 84.0, "w1_14": 83.0},
-    {"name": "Gavin S.", "w1_7": 62.0, "w1_14": 59.0}, // Barred
+    {"name": "Gavin S.", "w1_7": 62.0, "w1_14": 59.0},
     {"name": "Hana Lim", "w1_7": 95.0, "w1_14": 96.0},
     {"name": "Isaac N.", "w1_7": 88.0, "w1_14": 89.0},
-    {"name": "Julia R.", "w1_7": 42.0, "w1_14": 40.0}, // Barred
+    {"name": "Julia R.", "w1_7": 42.0, "w1_14": 40.0},
     {"name": "Kamal D.", "w1_7": 81.0, "w1_14": 82.0},
     {"name": "Lisa M.", "w1_7": 90.0, "w1_14": 91.0},
-    {"name": "Manny P.", "w1_7": 78.0, "w1_14": 80.0}, // Warning -> Recovered
+    {"name": "Manny P.", "w1_7": 78.0, "w1_14": 80.0},
     {"name": "Nina O.", "w1_7": 93.0, "w1_14": 94.0},
-    {"name": "Oscar T.", "w1_7": 58.0, "w1_14": 55.0}, // Barred
+    {"name": "Oscar T.", "w1_7": 58.0, "w1_14": 55.0},
     {"name": "Penny L.", "w1_7": 86.0, "w1_14": 88.0},
-    {"name": "Quinn S.", "w1_7": 72.0, "w1_14": 70.0}, // Barred
+    {"name": "Quinn S.", "w1_7": 72.0, "w1_14": 70.0},
     {"name": "Ryan K.", "w1_7": 97.0, "w1_14": 96.0},
   ];
 
-  // Logic Helpers
-  bool _isBarred(Map<String, dynamic> s) => s['w1_14'] < 80;
-  bool _isWarning(Map<String, dynamic> s) => s['w1_7'] < 80 && s['w1_14'] >= 80;
+  // --- LOGIC ---
+  bool _isWarning(Map<String, dynamic> s) => s['w1_7'] < 80.0;
+  bool _isBarred(Map<String, dynamic> s) =>
+      s['w1_7'] < 80.0 && s['w1_14'] < 80.0;
 
   List<Map<String, dynamic>> get _filteredList {
     if (_selectedFilter == 'Barred') {
@@ -80,62 +91,408 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
     return _allStudents;
   }
 
-  // --- 1. EXPORT TO EXCEL LOGIC ---
-  Future<void> _exportToExcel() async {
-    var excel = Excel.createExcel();
-    Sheet sheet = excel['PITS_Sect1_Report'];
-    excel.setDefaultSheet('PITS_Sect1_Report');
+  // --- NOTIFICATIONS ---
+  Future<void> _releaseNotifications(String type) async {
+    setState(() => _isSending = true);
 
-    // Headers
-    sheet.appendRow([
-      TextCellValue('Student Name'),
-      TextCellValue('Mid-Sem (W1-7)'),
-      TextCellValue('Overall (W1-14)'),
-      TextCellValue('Status'),
-    ]);
+    List<Map<String, dynamic>> targetList;
+    String title;
+    String message;
 
-    // Rows
-    for (var s in _allStudents) {
-      String status = "Good";
-
-      // FIX: Added curly braces to satisfy linter
-      if (_isBarred(s)) {
-        status = "Barred";
-      } else if (_isWarning(s)) {
-        status = "Warning";
-      }
-
-      sheet.appendRow([
-        TextCellValue(s['name']),
-        DoubleCellValue(s['w1_7']),
-        DoubleCellValue(s['w1_14']),
-        TextCellValue(status),
-      ]);
+    if (type == 'Warning') {
+      targetList = _allStudents.where((s) => _isWarning(s)).toList();
+      title = "Attendance Warning";
+      message =
+          "Your attendance for Week 1-7 is below 80%. Please submit a valid justification.";
+    } else {
+      targetList = _allStudents.where((s) => _isBarred(s)).toList();
+      title = "Barring Notification";
+      message =
+          "You have been BARRED from the final exam due to low attendance (Week 1-14 < 80%).";
     }
 
-    // Save & Share
+    if (targetList.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No students found for $type notifications.")),
+        );
+        setState(() => _isSending = false);
+      }
+      return;
+    }
+
     try {
-      var fileBytes = excel.save();
-      final directory = await getApplicationDocumentsDirectory();
-      final path = "${directory.path}/PITS_Section1_Attendance.xlsx";
+      final batch = FirebaseFirestore.instance.batch();
+      for (var student in targetList) {
+        final docRef = FirebaseFirestore.instance
+            .collection('student_notifications')
+            .doc();
+        batch.set(docRef, {
+          'studentName': student['name'],
+          'courseCode': 'CSCI 2303',
+          'type': type,
+          'title': title,
+          'message': message,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+        });
+      }
+      await batch.commit();
 
-      File(path)
-        ..createSync(recursive: true)
-        ..writeAsBytesSync(fileBytes!);
-
-      await Share.shareXFiles([
-        XFile(path),
-      ], text: 'Attendance Report for PITS Section 1');
+      if (mounted) {
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text("$type Notifications Sent"),
+            content: Text(
+              "Successfully released notifications to ${targetList.length} students.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
-      // FIX: Added mounted check before using context
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Export Error: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
-  // --- 2. GENERATE SUMMARY REPORT LOGIC ---
+  // --- PDF GENERATOR ---
+  Future<List<int>> _makePdf() async {
+    final pdf = pw.Document();
+    final font = pw.Font.times();
+    final fontBold = pw.Font.timesBold();
+
+    pw.MemoryImage? image;
+    try {
+      final imageBytes = await rootBundle.load(
+        'assets/IIUM_TAWHIDIC_UMMATIC_KHALIFAH.png',
+      );
+      image = pw.MemoryImage(imageBytes.buffer.asUint8List());
+    } catch (e) {
+      debugPrint("Warning: Could not load PDF logo. $e");
+    }
+
+    int total = _allStudents.length;
+    int barredCount = _allStudents.where((s) => _isBarred(s)).length;
+    int warningCount = _allStudents.where((s) => _isWarning(s)).length;
+    double avg =
+        _allStudents.map((s) => s['w1_14'] as double).reduce((a, b) => a + b) /
+        total;
+
+    final warningStudents = _allStudents.where((s) => _isWarning(s)).toList();
+    final barredStudents = _allStudents.where((s) => _isBarred(s)).toList();
+    final String dateGenerated = DateFormat(
+      'dd-MM-yyyy',
+    ).format(DateTime.now());
+
+    final textStyle = pw.TextStyle(font: font, fontSize: 12);
+    final textStyleBold = pw.TextStyle(
+      font: fontBold,
+      fontSize: 12,
+      fontWeight: pw.FontWeight.bold,
+    );
+
+    pw.Widget _tableHeader(String text) {
+      return pw.Container(
+        alignment: pw.Alignment.centerLeft,
+        padding: const pw.EdgeInsets.all(5),
+        color: PdfColors.grey300,
+        child: pw.Text(text, style: textStyleBold),
+      );
+    }
+
+    pw.Widget _tableCell(String text, [bool isCenter = false]) {
+      return pw.Container(
+        alignment: isCenter ? pw.Alignment.center : pw.Alignment.centerLeft,
+        padding: const pw.EdgeInsets.all(5),
+        child: pw.Text(text, style: textStyle),
+      );
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        theme: pw.ThemeData.withFont(base: font, bold: fontBold),
+        build: (pw.Context context) {
+          return [
+            // HEADER
+            pw.Center(
+              child: pw.Column(
+                children: [
+                  if (image != null)
+                    pw.Container(height: 60, child: pw.Image(image)),
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                    "KULLIYYAH OF INFORMATION AND COMMUNICATION TECHNOLOGY",
+                    style: textStyleBold,
+                  ),
+                  pw.Text(
+                    "DEPARTMENT OF COMPUTER SCIENCE",
+                    style: textStyleBold,
+                  ),
+                  pw.SizedBox(height: 10),
+                  pw.Text("SEMESTER 1, 25/26", style: textStyleBold),
+                  pw.SizedBox(height: 5),
+                  pw.Text(
+                    "CSCI 2303 PRINCIPLES OF IT SECURITY",
+                    style: textStyleBold,
+                  ),
+                  pw.Text("SECTION 01", style: textStyleBold),
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                    "ATTENDANCE SUMMARY REPORT",
+                    style: pw.TextStyle(
+                      font: fontBold,
+                      fontSize: 14,
+                      decoration: pw.TextDecoration.underline,
+                    ),
+                  ),
+                  pw.SizedBox(height: 5),
+                  pw.Text("DATE GENERATED: $dateGenerated", style: textStyle),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 25),
+
+            // SUMMARY TABLE
+            pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text("Attendance Summary", style: textStyleBold),
+            ),
+            pw.SizedBox(height: 5),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+              children: [
+                pw.TableRow(
+                  children: [_tableHeader("Metric"), _tableHeader("Count")],
+                ),
+                pw.TableRow(
+                  children: [
+                    _tableCell("Total Students"),
+                    _tableCell("$total", true),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    _tableCell("Class Average"),
+                    _tableCell("${avg.toStringAsFixed(1)}%", true),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    _tableCell("At Risk (Warning)"),
+                    _tableCell("$warningCount", true),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    _tableCell("Barred Candidates"),
+                    _tableCell("$barredCount", true),
+                  ],
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 25),
+
+            // WARNING TABLE (Week 1-7 Only)
+            pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                "List of Warning Students (Week 1-7)",
+                style: textStyleBold,
+              ),
+            ),
+            pw.SizedBox(height: 5),
+            if (warningStudents.isEmpty)
+              pw.Text(
+                "No students currently on warning list.",
+                style: textStyle,
+              )
+            else
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                children: [
+                  pw.TableRow(
+                    children: [
+                      _tableHeader("Student Name"),
+                      _tableHeader("Attendance % (W1-7)"),
+                      _tableHeader("Status"),
+                    ],
+                  ),
+                  ...warningStudents.map(
+                    (s) => pw.TableRow(
+                      children: [
+                        _tableCell(s['name']),
+                        _tableCell(
+                          "${s['w1_7']}%",
+                          true,
+                        ), // Only W1-7 data displayed
+                        _tableCell("WARNING", true),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            pw.SizedBox(height: 25),
+
+            // BARRED TABLE (Week 1-7 AND Week 1-14)
+            pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                "List of Barred Students (Week 1-14)",
+                style: textStyleBold,
+              ),
+            ),
+            pw.SizedBox(height: 5),
+            if (barredStudents.isEmpty)
+              pw.Text("No barred students.", style: textStyle)
+            else
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                children: [
+                  pw.TableRow(
+                    children: [
+                      _tableHeader("Student Name"),
+                      _tableHeader("Attendance % (W1-7)"),
+                      _tableHeader("Attendance % (Overall)"),
+                      _tableHeader("Status"),
+                    ],
+                  ),
+                  ...barredStudents.map(
+                    (s) => pw.TableRow(
+                      children: [
+                        _tableCell(s['name']),
+                        _tableCell("${s['w1_7']}%", true),
+                        _tableCell("${s['w1_14']}%", true),
+                        _tableCell("BARRED", true),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+          ];
+        },
+      ),
+    );
+    return pdf.save();
+  }
+
+  Future<void> _downloadPdfReport() async {
+    try {
+      final pdfBytes = await _makePdf();
+      final output = await getTemporaryDirectory();
+      final file = File("${output.path}/PITS_Section1_Full_Report.pdf");
+      await file.writeAsBytes(pdfBytes);
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Attendance Report (PITS Sect 1)');
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+  }
+
+  Future<void> _sendReportToAdmin() async {
+    setState(() => _isSending = true);
+    try {
+      int total = _allStudents.length;
+      int barredCount = _allStudents.where((s) => _isBarred(s)).length;
+      int warningCount = _allStudents.where((s) => _isWarning(s)).length;
+      double avg =
+          _allStudents
+              .map((s) => s['w1_14'] as double)
+              .reduce((a, b) => a + b) /
+          total;
+
+      final barredList = _allStudents
+          .where((s) => _isBarred(s))
+          .map(
+            (s) => {
+              'name': s['name'],
+              'attendance_w7': s['w1_7'],
+              'attendance_w14': s['w1_14'],
+              'status': 'BARRED',
+            },
+          )
+          .toList();
+
+      final warningList = _allStudents
+          .where((s) => _isWarning(s))
+          .map(
+            (s) => {
+              'name': s['name'],
+              'attendance_w7': s['w1_7'],
+              'status': 'WARNING',
+            },
+          )
+          .toList();
+
+      await FirebaseFirestore.instance.collection('admin_reports').add({
+        'courseCode': 'CSCI 2303',
+        'courseName': 'Principles of IT Security',
+        'section': '01',
+        'semester': 'Semester 1, 25/26',
+        'totalStudents': total,
+        'averageAttendance': double.parse(avg.toStringAsFixed(1)),
+        'barredCount': barredCount,
+        'warningCount': warningCount,
+        'barredStudents': barredList,
+        'warningStudents': warningList,
+        'timestamp': FieldValue.serverTimestamp(),
+        'status': 'Submitted',
+        'reportFormat': 'Corrected PDF v4',
+      });
+
+      await FirebaseFirestore.instance.collection('admin_notifications').add({
+        'type': 'report_submission',
+        'message': 'New Report: CSCI 2303 (Sect 1)',
+        'details': '$barredCount Barred, $warningCount Warned.',
+        'isRead': false,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+      Navigator.pop(context);
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text("Sent to Admin"),
+          content: const Text(
+            "The full attendance report data has been successfully sent to the Admin Portal.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to send: $e")));
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  // --- UI ---
   void _generateSummaryReport() {
     int total = _allStudents.length;
     int barred = _allStudents.where((s) => _isBarred(s)).length;
@@ -147,62 +504,149 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
         padding: const EdgeInsets.all(25),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.analytics_rounded, color: Color(0xFF4A00E0)),
-                const SizedBox(width: 10),
-                Text(
-                  "Performance Summary",
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.analytics_rounded, color: Color(0xFF4A00E0)),
+                  const SizedBox(width: 10),
+                  Text(
+                    "Performance Summary",
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const Divider(height: 30),
-            _buildSummaryRow("Total Students", "$total", Colors.black87),
-            _buildSummaryRow(
-              "Class Average",
-              "${avg.toStringAsFixed(1)}%",
-              Colors.blue,
-            ),
-            _buildSummaryRow("At Risk (Warning)", "$warning", Colors.orange),
-            _buildSummaryRow("Barred Candidates", "$barred", Colors.red),
-            const SizedBox(height: 30),
+                ],
+              ),
+              const Divider(height: 30),
+              _buildSummaryRow("Total Students", "$total", Colors.black87),
+              _buildSummaryRow(
+                "Class Average",
+                "${avg.toStringAsFixed(1)}%",
+                Colors.blue,
+              ),
+              _buildSummaryRow("At Risk (Warning)", "$warning", Colors.orange),
+              _buildSummaryRow("Barred Candidates", "$barred", Colors.red),
+              const SizedBox(height: 30),
 
-            // Button inside report to download excel
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context); // Close sheet
-                  _exportToExcel(); // Trigger export
-                },
-                icon: const Icon(Icons.download_rounded),
-                label: const Text("Download Excel Data"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A00E0),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              Text(
+                "Actions & Notifications",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isSending
+                      ? null
+                      : () => _releaseNotifications('Warning'),
+                  icon: const Icon(Icons.notifications_active_rounded),
+                  label: const Text("Release Warning Notifications"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isSending
+                      ? null
+                      : () => _releaseNotifications('Barred'),
+                  icon: const Icon(Icons.block_rounded),
+                  label: const Text("Release Barring Notifications"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(height: 30),
+
+              Text(
+                "Exports",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _downloadPdfReport,
+                  icon: const Icon(Icons.picture_as_pdf_rounded),
+                  label: const Text("Download Full Report (PDF)"),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF4A00E0),
+                    side: const BorderSide(color: Color(0xFF4A00E0)),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isSending ? null : _sendReportToAdmin,
+                  icon: _isSending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.cloud_upload_rounded),
+                  label: Text(
+                    _isSending ? "Sending..." : "Submit to Admin Portal",
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4A00E0),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -270,7 +714,6 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
       ),
       body: Stack(
         children: [
-          // Header Background
           Container(
             height: 250,
             decoration: const BoxDecoration(
@@ -285,8 +728,6 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
               ),
             ),
           ),
-
-          // Content
           SafeArea(
             child: Column(
               children: [
@@ -304,8 +745,6 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
                   style: GoogleFonts.lato(color: Colors.white70),
                 ),
                 const SizedBox(height: 20),
-
-                // FILTER TABS
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   padding: const EdgeInsets.all(5),
@@ -323,8 +762,6 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
                   ),
                 ),
                 const SizedBox(height: 15),
-
-                // STUDENT LIST
                 Expanded(
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -357,96 +794,17 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
               ],
             ),
           ),
-
-          // "Release Letters" Button (Only shows when filtered)
-          if (_selectedFilter != 'All' && _filteredList.isNotEmpty)
-            Positioned(
-              bottom: 100, // Moved up slightly to not overlap FAB
-              left: 40,
-              right: 40,
-              child: _buildReleaseButton(),
-            ),
         ],
       ),
-
-      // --- EXPORT / REPORT BUTTON (Floating Action Button) ---
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Open Bottom Sheet Menu
-          showModalBottomSheet(
-            context: context,
-            backgroundColor: Colors.transparent,
-            builder: (context) => Container(
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Option 1: Excel
-                  ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFFE8F5E9),
-                      child: Icon(
-                        Icons.table_view_rounded,
-                        color: Colors.green,
-                      ),
-                    ),
-                    title: Text(
-                      "Export Data to Excel",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      "Download .xlsx file",
-                      style: GoogleFonts.lato(fontSize: 12),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _exportToExcel();
-                    },
-                  ),
-                  const Divider(),
-                  // Option 2: Report
-                  ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFFE3F2FD),
-                      child: Icon(Icons.analytics_rounded, color: Colors.blue),
-                    ),
-                    title: Text(
-                      "Generate Summary Report",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      "View stats and insights",
-                      style: GoogleFonts.lato(fontSize: 12),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _generateSummaryReport();
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ),
-          );
-        },
+        onPressed: _generateSummaryReport,
         backgroundColor: const Color(0xFF4A00E0),
-        // --- ICON & TEXT IN WHITE ---
-        icon: const Icon(Icons.ios_share_rounded, color: Colors.white),
+        icon: const Icon(
+          Icons.assignment_turned_in_rounded,
+          color: Colors.white,
+        ),
         label: Text(
-          "Export Report",
+          "Export / Actions",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -455,8 +813,6 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
       ),
     );
   }
-
-  // --- WIDGET HELPERS ---
 
   Widget _buildFilterTab(String label, String count) {
     bool isSelected = _selectedFilter == label;
@@ -493,61 +849,37 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
     );
   }
 
-  Widget _buildReleaseButton() {
-    String label = _selectedFilter == 'Warning'
-        ? "Release Warning Letters"
-        : "Release Barred Letters";
-    Color color = _selectedFilter == 'Warning' ? Colors.orange : Colors.red;
-    IconData icon = _selectedFilter == 'Warning'
-        ? Icons.warning_rounded
-        : Icons.block;
-
-    return ElevatedButton.icon(
-      onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Processing: $label for ${_filteredList.length} students...",
-            ),
-            backgroundColor: color,
-          ),
-        );
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
-      ),
-      icon: Icon(icon),
-      label: Text(
-        label,
-        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14),
-      ),
-    );
-  }
-
   Widget _buildStudentRow(Map<String, dynamic> student) {
     double midSem = student['w1_7'];
     double overall = student['w1_14'];
 
-    Color statusColor;
-    String statusText;
-    IconData statusIcon;
+    // Default Values (will be overridden)
+    Color statusColor = Colors.green;
+    String statusText = "Good";
+    IconData statusIcon = Icons.check_circle_outline;
 
-    if (overall < 80) {
-      statusColor = Colors.red;
-      statusText = "Barred";
-      statusIcon = Icons.block;
-    } else if (midSem < 80) {
+    // --- 3. CUSTOM DISPLAY LOGIC BASED ON FILTER ---
+    if (_selectedFilter == 'Warning') {
+      // In Warning View: Force WARNING appearance for everyone listed here
       statusColor = Colors.orange;
-      statusText = "Warning";
-      statusIcon = Icons.warning_amber_rounded;
+      statusText = "WARNING";
+      statusIcon = Icons.warning_amber_rounded; // Specific requested icon
+    } else if (_selectedFilter == 'Barred') {
+      // In Barred View: Force BARRED appearance
+      statusColor = Colors.red;
+      statusText = "BARRED";
+      statusIcon = Icons.block;
     } else {
-      statusColor = Colors.green;
-      statusText = "Good";
-      statusIcon = Icons.check_circle_outline;
+      // In 'All' View: Use cascading logic
+      if (midSem < 80 && overall < 80) {
+        statusColor = Colors.red;
+        statusText = "Barred";
+        statusIcon = Icons.block;
+      } else if (midSem < 80) {
+        statusColor = Colors.orange;
+        statusText = "WARNING";
+        statusIcon = Icons.warning_amber_rounded;
+      }
     }
 
     return Row(
@@ -587,6 +919,10 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
             ],
           ),
         ),
+
+        // --- COLUMNS DISPLAY ---
+
+        // Column 1: W1-7 (Always Visible)
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -603,23 +939,28 @@ class _StaffReportsPitsSect1PageState extends State<StaffReportsPitsSect1Page> {
             ),
           ],
         ),
-        const SizedBox(width: 15),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              "W1-14",
-              style: GoogleFonts.lato(fontSize: 10, color: Colors.grey),
-            ),
-            Text(
-              "${overall.toInt()}%",
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                color: overall < 80 ? Colors.red : Colors.black87,
+
+        // Column 2: W1-14 (HIDDEN in Warning View)
+        if (_selectedFilter != 'Warning') ...[
+          const SizedBox(width: 15),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "W1-14",
+                style: GoogleFonts.lato(fontSize: 10, color: Colors.grey),
               ),
-            ),
-          ],
-        ),
+              Text(
+                "${overall.toInt()}%",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  color: overall < 80 ? Colors.red : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ],
+
         const SizedBox(width: 10),
         Icon(statusIcon, color: statusColor, size: 20),
       ],

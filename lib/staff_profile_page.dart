@@ -1,27 +1,122 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'welcome.dart';
 import 'fade_page_route.dart';
+import 'staff_consultation_page.dart';
+import 'staff_leave_application.dart';
+import 'staff_courses.dart';
+import 'staff_stud_directory.dart';
+import 'staff_faculty_announcement.dart';
+import 'staff_profile_settings.dart'; // <--- 1. IMPORT NEW FILE
 
-class StaffProfilePage extends StatelessWidget {
+class StaffProfilePage extends StatefulWidget {
   const StaffProfilePage({super.key});
+
+  @override
+  State<StaffProfilePage> createState() => _StaffProfilePageState();
+}
+
+class _StaffProfilePageState extends State<StaffProfilePage> {
+  // --- STATE VARIABLES ---
+  String _name = "Dr. Andi Fitriah";
+  String _role = "Senior Lecturer";
+  String _department = "Dept of Computer Science";
+
+  // --- HELPER: Navigation/Feedback ---
+  Future<void> _handleTileTap(String title) async {
+    if (title == "Consultation Requests") {
+      Navigator.push(
+        context,
+        FadePageRoute(page: const StaffConsultationPage()),
+      );
+    } else if (title == "Leave Application") {
+      Navigator.push(
+        context,
+        FadePageRoute(page: const StaffLeaveApplicationPage()),
+      );
+    } else if (title == "My Courses") {
+      Navigator.push(context, FadePageRoute(page: const StaffCoursesPage()));
+    } else if (title == "Student Directory") {
+      Navigator.push(
+        context,
+        FadePageRoute(page: const StaffStudentDirectoryPage()),
+      );
+    } else if (title == "Faculty Announcements") {
+      Navigator.push(
+        context,
+        FadePageRoute(page: const StaffFacultyAnnouncementPage()),
+      );
+    } else if (title == "Profile Settings") {
+      // <--- 2. UPDATED LOGIC FOR SETTINGS
+      final result = await Navigator.push(
+        context,
+        FadePageRoute(
+          page: StaffProfileSettingsPage(
+            currentName: _name,
+            currentRole: _role,
+            currentDept: _department,
+          ),
+        ),
+      );
+
+      // 3. Update State if data returned
+      if (result != null && result is Map<String, String>) {
+        setState(() {
+          _name = result['name']!;
+          _role = result['role']!;
+          _department = result['department']!;
+        });
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Opening $title..."),
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // --- LOGIC: Quick Edit (Pencil Icon) ---
+  // You can keep this or redirect it to the full settings page as well
+  void _openQuickEdit() async {
+    // Reuse the new settings page logic
+    final result = await Navigator.push(
+      context,
+      FadePageRoute(
+        page: StaffProfileSettingsPage(
+          currentName: _name,
+          currentRole: _role,
+          currentDept: _department,
+        ),
+      ),
+    );
+
+    if (result != null && result is Map<String, String>) {
+      setState(() {
+        _name = result['name']!;
+        _role = result['role']!;
+        _department = result['department']!;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA), // Clean Light Background
+      backgroundColor: const Color(0xFFF6F8FA),
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // 1. HEADER BACKGROUND (Matches Staff Home)
+          // 1. HEADER BACKGROUND
           Container(
-            height: 320,
+            height: 340,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF1A0038), // Deep Midnight Purple
-                  Color(0xFF4A00E0), // Royal Purple
-                ],
+                colors: [Color(0xFF1A0038), Color(0xFF4A00E0)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -45,34 +140,77 @@ class StaffProfilePage extends StatelessWidget {
                     child: Column(
                       children: [
                         // Avatar Ring
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            // ignore: deprecated_member_use
-                            color: Colors.white.withOpacity(0.2),
-                          ),
-                          child: const CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.white,
-                            backgroundImage: NetworkImage(
-                              'https://italeemc.iium.edu.my/pluginfile.php/5130/user/icon/remui/f3?rev=175531',
+                        Stack(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withOpacity(0.2),
+                              ),
+                              child: const CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.white,
+                                backgroundImage: NetworkImage(
+                                  'https://italeemc.iium.edu.my/pluginfile.php/5130/user/icon/remui/f3?rev=175531',
+                                ),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Change Profile Photo"),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 18,
+                                    color: Color(0xFF4A00E0),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
 
                         // Name & Department
-                        Text(
-                          "Dr. Andi Fitriah",
-                          style: GoogleFonts.poppins(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _name,
+                              style: GoogleFonts.poppins(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed:
+                                  _openQuickEdit, // Link pencil to new page
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.white70,
+                                size: 18,
+                              ),
+                              tooltip: "Edit Profile",
+                            ),
+                          ],
                         ),
                         Text(
-                          "Senior Lecturer • Dept of Computer Science",
+                          "$_role • $_department",
                           style: GoogleFonts.lato(
                             fontSize: 14,
                             color: Colors.white70,
@@ -93,7 +231,6 @@ class StaffProfilePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
@@ -107,10 +244,7 @@ class StaffProfilePage extends StatelessWidget {
                         _buildVerticalDivider(),
                         _buildStat("Students", "142"),
                         _buildVerticalDivider(),
-                        _buildStat(
-                          "Consultations",
-                          "8",
-                        ), // Updated for Lecturer relevance
+                        _buildStat("Consultations", "8"),
                       ],
                     ),
                   ),
@@ -143,7 +277,7 @@ class StaffProfilePage extends StatelessWidget {
                           Icons.calendar_today_rounded,
                           "Consultation Requests",
                           "Manage student appointments",
-                          hasNotification: true, // Red dot indicator
+                          hasNotification: true,
                         ),
                         _buildSettingsTile(
                           Icons.people_alt_rounded,
@@ -191,7 +325,7 @@ class StaffProfilePage extends StatelessWidget {
                         _buildSettingsTile(
                           Icons.settings_outlined,
                           "Profile Settings",
-                          "Password & Security",
+                          "Edit Profile, Password & Security",
                         ),
 
                         const SizedBox(height: 40),
@@ -278,7 +412,6 @@ class StaffProfilePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -289,7 +422,6 @@ class StaffProfilePage extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            // ignore: deprecated_member_use
             color: const Color(0xFF4A00E0).withOpacity(0.1),
             shape: BoxShape.circle,
           ),
@@ -327,7 +459,7 @@ class StaffProfilePage extends StatelessWidget {
             ),
           ],
         ),
-        onTap: () {},
+        onTap: () => _handleTileTap(title),
       ),
     );
   }

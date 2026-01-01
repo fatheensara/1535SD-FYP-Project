@@ -157,7 +157,9 @@ class _StaffHomePageState extends State<StaffHomePage> {
 
                 // QUICK ACCESS GRID
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // --- CHANGE HERE: Changed from spaceBetween to spaceEvenly ---
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildQuickAction(
                       Icons.qr_code_scanner,
@@ -172,6 +174,8 @@ class _StaffHomePageState extends State<StaffHomePage> {
                         );
                       },
                     ),
+
+                    // --- CONSULTATION BUTTON (Badge Removed) ---
                     _buildQuickAction(
                       Icons.people_alt_outlined,
                       "Consultation",
@@ -183,12 +187,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                         );
                       },
                     ),
-                    _buildQuickAction(
-                      Icons.assessment_outlined,
-                      "Results",
-                      Colors.teal,
-                      () => _showSnackBar("Opening Exam Results..."),
-                    ),
+
                     _buildQuickAction(
                       Icons.campaign_outlined,
                       "Broadcast",
@@ -240,44 +239,58 @@ class _StaffHomePageState extends State<StaffHomePage> {
 
   // --- WIDGET HELPER METHODS ---
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
-        duration: const Duration(seconds: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
   Widget _buildQuickAction(
     IconData icon,
     String label,
     Color color,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    int badgeCount = 0, // Defaults to 0 (no badge)
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  // ignore: deprecated_member_use
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+          // Wrapped in Stack to overlay badge
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      // ignore: deprecated_member_use
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Icon(icon, color: color, size: 28),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              if (badgeCount > 0)
+                Positioned(
+                  top: -5,
+                  right: -5,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      badgeCount.toString(),
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(

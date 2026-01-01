@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'fade_page_route.dart';
 
-// Import specific report pages (ensure these exist or create placeholders)
+// Import specific report pages
 import 'staff_reports_pits_sect1.dart';
 import 'staff_reports_pits_sect2.dart';
 import 'staff_reports_netsec_sect1.dart';
@@ -13,35 +13,35 @@ class StaffReportsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- MOCK DATA FOR CLASSES ---
+    // --- UPDATE THESE VALUES TO MATCH YOUR OTHER FILES ---
     final List<Map<String, dynamic>> classList = [
       {
         "code": "CSCI 2303",
         "name": "Principles of IT Security",
         "students": 45,
         "section": "Section 1",
-        "attendance": 0.92, // 92%
+        "attendance": 0.800, // 80.0%
       },
       {
         "code": "CSCI 2303",
         "name": "Principles of IT Security",
         "students": 40,
         "section": "Section 2",
-        "attendance": 0.88, // 88%
+        "attendance": 0.798, // 79.8%
       },
       {
         "code": "CSCI 4336",
         "name": "Network Security",
         "students": 38,
         "section": "Section 1",
-        "attendance": 0.85, // 85%
+        "attendance": 0.804, // 80.4%
       },
       {
         "code": "CSCI 4332",
         "name": "Digital Evidence Forensics",
         "students": 42,
         "section": "Section 2",
-        "attendance": 0.95, // 95%
+        "attendance": 0.803, // 80.3%
       },
     ];
 
@@ -50,7 +50,7 @@ class StaffReportsPage extends StatelessWidget {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          "Analytics & Reports",
+          "Subject Reports",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -65,7 +65,7 @@ class StaffReportsPage extends StatelessWidget {
         children: [
           // 1. HEADER BACKGROUND
           Container(
-            height: 280,
+            height: 150, // Reduced height for simple header
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -76,38 +76,20 @@ class StaffReportsPage extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
               ),
             ),
           ),
 
-          // 2. CONTENT
+          // 2. CONTENT LIST
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 10, 24, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // --- SUMMARY CARD (From File 1) ---
-                  _buildSummaryCard(),
-
-                  const SizedBox(height: 30),
-
-                  Text(
-                    "Subject Reports",
-                    style: GoogleFonts.poppins(
-                      color: Colors.black87,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-
-                  // --- LIST OF SUBJECTS (From File 2) ---
-                  ...classList.map((data) => _buildSubjectCard(context, data)),
-                ],
-              ),
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
+              itemCount: classList.length,
+              itemBuilder: (context, index) {
+                return _buildSubjectCard(context, classList[index]);
+              },
             ),
           ),
         ],
@@ -115,117 +97,14 @@ class StaffReportsPage extends StatelessWidget {
     );
   }
 
-  // --- WIDGET 1: SUMMARY GRAPH ---
-  Widget _buildSummaryCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        // ignore: deprecated_member_use
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        // ignore: deprecated_member_use
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Circular Indicator
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 70,
-                    height: 70,
-                    child: CircularProgressIndicator(
-                      value: 0.90, // Overall Average
-                      strokeWidth: 8,
-                      backgroundColor: Colors.white24,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.cyanAccent,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    "90%",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Weekly Overview",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "Attendance is stable. No major drops detected this week.",
-                      style: GoogleFonts.lato(
-                        fontSize: 12,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Mini Bar Chart
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _buildBar("Mon", 0.7, Colors.purpleAccent),
-              _buildBar("Tue", 0.85, Colors.pinkAccent),
-              _buildBar("Wed", 0.6, Colors.orangeAccent),
-              _buildBar("Thu", 0.9, Colors.cyanAccent),
-              _buildBar("Fri", 0.5, Colors.blueAccent),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBar(String label, double heightPct, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 8,
-          height: 60 * heightPct,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: GoogleFonts.lato(color: Colors.white54, fontSize: 10),
-        ),
-      ],
-    );
-  }
-
-  // --- WIDGET 2: SUBJECT LIST CARD ---
+  // --- WIDGET: SUBJECT LIST CARD ---
   Widget _buildSubjectCard(BuildContext context, Map<String, dynamic> data) {
     double attendance = data['attendance'];
-    Color barColor = attendance > 0.9
+
+    // Determine color based on threshold
+    Color barColor = attendance >= 0.80
         ? Colors.green
-        : (attendance > 0.8 ? Colors.orange : Colors.red);
+        : (attendance > 0.70 ? Colors.orange : Colors.red);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -339,8 +218,9 @@ class StaffReportsPage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
+                          // CHANGED: Formatted to 1 decimal place (e.g. 79.8%)
                           Text(
-                            "${(attendance * 100).toInt()}%",
+                            "${(attendance * 100).toStringAsFixed(1)}%",
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,

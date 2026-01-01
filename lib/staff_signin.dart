@@ -1,11 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'staff_forgot_password_page.dart';
 // ignore: unused_import
-import 'staff_home.dart'; // Ensure this matches your home page file name
-import 'staff_hello.dart'; // <--- Added for navigation
+import 'staff_home.dart';
+import 'staff_hello.dart';
 import 'fade_page_route.dart';
 import 'home_screen.dart';
 
@@ -17,8 +19,90 @@ class StaffSignInPage extends StatefulWidget {
 }
 
 class _StaffSignInPageState extends State<StaffSignInPage> {
+  // --- CONTROLLERS & STATE ---
+  final TextEditingController _staffIdController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
   bool _rememberMe = false;
   bool _isPasswordObscured = true;
+  bool _isLoading = false;
+
+  // --- LOGIC: EMAIL/ID LOGIN ---
+  void _handleLogin() {
+    // 1. Validation Check
+    if (_staffIdController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Please enter both Staff ID and Password."),
+          backgroundColor: Colors.red.shade400,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // 2. If Valid, Proceed (Simulated for now, replace with actual Firebase auth if needed)
+    setState(() => _isLoading = true);
+
+    // Simulate network delay
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        FadePageRoute(page: HomeScreen(userRole: 'staff')),
+        (route) => false,
+      );
+    });
+  }
+
+  // --- LOGIC: GOOGLE LOGIN ---
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. Trigger Google Sign In flow
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        // User canceled the sign-in
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // 3. Create a new credential
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+        // accessToken: googleAuth.accessToken, // Not needed for Firebase often
+      );
+
+      // 4. Sign in to Firebase with the credential
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // 5. Navigate on Success
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        FadePageRoute(page: HomeScreen(userRole: 'staff')),
+        (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Google Sign-In Failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +126,6 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
             ),
           ),
           onPressed: () {
-            // *** NAVIGATION UPDATE ***
             Navigator.pushReplacement(
               context,
               FadePageRoute(page: const StaffHelloPage()),
@@ -52,10 +135,10 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
       ),
       body: Stack(
         children: [
-          // 1. DARK BACKGROUND
+          // 1. BACKGROUND
           _buildBackground(),
 
-          // 2. GLASS CONTENT
+          // 2. CONTENT
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -64,7 +147,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                 children: [
                   const SizedBox(height: 60),
 
-                  // Icon
+                  // ICON
                   Container(
                     height: 100,
                     width: 100,
@@ -124,7 +207,6 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                           // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.4),
                           borderRadius: BorderRadius.circular(25),
-                          // ignore: deprecated_member_use
                           border: Border.all(
                             // ignore: deprecated_member_use
                             color: Colors.white.withOpacity(0.1),
@@ -132,18 +214,24 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                         ),
                         child: Column(
                           children: [
+                            // STAFF ID FIELD
                             _buildGlassTextField(
+                              controller: _staffIdController,
                               hint: "Staff ID",
                               icon: Icons.perm_identity,
                             ),
                             const SizedBox(height: 20),
+
+                            // PASSWORD FIELD
                             _buildGlassTextField(
+                              controller: _passwordController,
                               hint: "Password",
                               icon: Icons.lock_outline,
                               isPassword: true,
                             ),
                             const SizedBox(height: 15),
 
+                            // REMEMBER & FORGOT PASSWORD ROW
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -207,19 +295,12 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                             ),
                             const SizedBox(height: 30),
 
+                            // MAIN LOGIN BUTTON
                             SizedBox(
                               width: double.infinity,
                               height: 55,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    FadePageRoute(
-                                      page: HomeScreen(userRole: 'staff'),
-                                    ),
-                                    (route) => false,
-                                  );
-                                },
+                                onPressed: _isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
                                   foregroundColor: const Color(0xFF0F0C29),
@@ -227,13 +308,21 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                 ),
-                                child: Text(
-                                  "LOG IN",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(
+                                        "LOG IN",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                               ),
                             ),
                           ],
@@ -241,6 +330,43 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: 30),
+
+                  // --- GOOGLE SIGN IN BUTTON ---
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _handleGoogleLogin,
+                      icon: Image.asset(
+                        // Make sure you have a google logo asset or use an Icon
+                        // If you don't have 'assets/google.png', use an Icon instead:
+                        // Icons.login
+                        'assets/google.png',
+                        height: 24,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.login, color: Colors.white),
+                      ),
+                      label: Text(
+                        "Sign in with Google",
+                        style: GoogleFonts.lato(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white30),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        // ignore: deprecated_member_use
+                        backgroundColor: Colors.white.withOpacity(0.05),
+                      ),
+                    ),
+                  ),
+
                   const SizedBox(height: 30),
                   Text(
                     "International Islamic University Malaysia",
@@ -258,6 +384,8 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
       ),
     );
   }
+
+  // --- WIDGET HELPERS ---
 
   Widget _buildBackground() {
     return Container(
@@ -297,6 +425,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
   }
 
   Widget _buildGlassTextField({
+    required TextEditingController controller,
     required String hint,
     required IconData icon,
     bool isPassword = false,
@@ -308,6 +437,7 @@ class _StaffSignInPageState extends State<StaffSignInPage> {
         borderRadius: BorderRadius.circular(15),
       ),
       child: TextFormField(
+        controller: controller, // <--- BINDING THE CONTROLLER
         obscureText: isPassword ? _isPasswordObscured : false,
         style: GoogleFonts.lato(color: Colors.white),
         decoration: InputDecoration(

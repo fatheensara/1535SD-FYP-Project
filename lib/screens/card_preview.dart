@@ -1,4 +1,6 @@
 // lib/widgets/card_preview.dart
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -7,7 +9,7 @@ class CardPreview extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onCreateCard;
   final bool isLoading;
-  final bool hasCard; 
+  final bool hasCard;
 
   // Add these gradients to match profile page
   static final List<List<Color>> _cardGradients = [
@@ -24,7 +26,7 @@ class CardPreview extends StatelessWidget {
     this.onTap,
     this.onCreateCard,
     this.isLoading = false,
-    this.hasCard = false, 
+    this.hasCard = false,
   });
 
   @override
@@ -33,7 +35,7 @@ class CardPreview extends StatelessWidget {
       return _buildLoadingPreview();
     }
 
-    if (!hasCard || cardData == null) {  
+    if (!hasCard || cardData == null) {
       return _buildNoCardPreview();
     }
 
@@ -52,10 +54,7 @@ class CardPreview extends StatelessWidget {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(width: 16),
-            Text(
-              'Loading card...',
-              style: GoogleFonts.poppins(),
-            ),
+            Text('Loading card...', style: GoogleFonts.poppins()),
           ],
         ),
       ),
@@ -79,18 +78,14 @@ class CardPreview extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   'No Virtual Card',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               'Create a virtual card for NFC attendance',
-              style: GoogleFonts.lato(
-                color: Colors.grey.shade600,
-              ),
+              style: GoogleFonts.lato(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -111,7 +106,7 @@ class CardPreview extends StatelessWidget {
     final name = cardData!['name'] ?? 'Unknown';
     final studentId = cardData!['studentId'] ?? 'Unknown';
     final course = cardData!['course'] ?? 'Unknown';
-    
+
     // Get skin index from card data or use default
     final skinIndex = cardData!['skinIndex'] ?? 0;
     final safeIndex = skinIndex.clamp(0, _cardGradients.length - 1);
@@ -119,9 +114,7 @@ class CardPreview extends StatelessWidget {
 
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -151,7 +144,9 @@ class CardPreview extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                            ),
                           ),
                           child: Center(
                             child: Icon(
@@ -180,7 +175,9 @@ class CardPreview extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -232,6 +229,7 @@ class CardPreview extends StatelessWidget {
                       course,
                       style: GoogleFonts.lato(
                         fontSize: 14,
+
                         color: Colors.white.withOpacity(0.8),
                       ),
                       maxLines: 1,
@@ -243,6 +241,7 @@ class CardPreview extends StatelessWidget {
                         'NFC: ${cardData!['physicalCardUid']!.substring(0, 8)}...',
                         style: GoogleFonts.sourceCodePro(
                           fontSize: 10,
+
                           color: Colors.white.withOpacity(0.7),
                         ),
                       ),
@@ -251,6 +250,7 @@ class CardPreview extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 12),
+
                 Divider(color: Colors.white.withOpacity(0.3)),
                 const SizedBox(height: 8),
 
@@ -272,11 +272,7 @@ class CardPreview extends StatelessWidget {
                     ),
                     TextButton.icon(
                       onPressed: onCreateCard,
-                      icon: Icon(
-                        Icons.refresh,
-                        size: 16,
-                        color: Colors.white,
-                      ),
+                      icon: Icon(Icons.refresh, size: 16, color: Colors.white),
                       label: Text(
                         'Recreate',
                         style: TextStyle(color: Colors.white),

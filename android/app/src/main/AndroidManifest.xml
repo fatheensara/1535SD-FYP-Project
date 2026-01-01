@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.sya.attendid">  
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">  
     
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -12,12 +11,12 @@
         android:required="true" />
     
     <application
-        android:label="attendid"
+        android:label="fyp"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
         <activity
-            android:name=".MainActivity"
+            android:name="com.sya.attendid.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""

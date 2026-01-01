@@ -14,17 +14,18 @@ class StaffLiveAttendanceDefSect2Page extends StatefulWidget {
       _StaffLiveAttendanceDefSect2PageState();
 }
 
-class _StaffLiveAttendanceDefSect2PageState extends State<StaffLiveAttendanceDefSect2Page>
+class _StaffLiveAttendanceDefSect2PageState
+    extends State<StaffLiveAttendanceDefSect2Page>
     with SingleTickerProviderStateMixin {
-    late AnimationController _pulseController;
-    late Animation<double> _pulseAnimation;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   late AudioPlayer _audioPlayer;
   bool _soundEnabled = true;
   double _volume = 0.5;
 
   // --- NFC STATE ---
-  bool _isNfcScanning = false; 
+  bool _isNfcScanning = false;
   String _nfcStatus = "Ready to Scan";
 
   // --- MOCK DATA: 42 STUDENTS (DEF Sect 2) ---
@@ -139,7 +140,10 @@ class _StaffLiveAttendanceDefSect2PageState extends State<StaffLiveAttendanceDef
     }
 
     if (idBytes == null) return null;
-    return idBytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+    return idBytes
+        .map((e) => e.toRadixString(16).padLeft(2, '0'))
+        .join(':')
+        .toUpperCase();
   }
 
   void _handleScannedTag(String uid) async {
@@ -149,6 +153,7 @@ class _StaffLiveAttendanceDefSect2PageState extends State<StaffLiveAttendanceDef
         await _audioPlayer.setVolume(_volume);
         await _audioPlayer.play(AssetSource('beep.mp3'));
       } catch (e) {
+        debugPrint("Audio Error: $e");
       }
     }
 
@@ -185,7 +190,7 @@ class _StaffLiveAttendanceDefSect2PageState extends State<StaffLiveAttendanceDef
           }
         }
         if (!foundInClass) {
-          _students.insert(0, { 
+          _students.insert(0, {
             "name": scannedName,
             "id": scannedId,
             "status": "Present",
@@ -199,9 +204,11 @@ class _StaffLiveAttendanceDefSect2PageState extends State<StaffLiveAttendanceDef
       if (foundInClass) {
         _showSnackBar("✅ $scannedName marked PRESENT!", Colors.green);
       } else {
-        _showSnackBar("➕ $scannedName added to class & marked PRESENT!", Colors.blue);
+        _showSnackBar(
+          "➕ $scannedName added to class & marked PRESENT!",
+          Colors.blue,
+        );
       }
-
     } catch (e) {
       _showSnackBar("Error: $e", Colors.red);
     }
@@ -240,7 +247,7 @@ class _StaffLiveAttendanceDefSect2PageState extends State<StaffLiveAttendanceDef
       for (var s in _students) {
         if (s['status'] == 'Pending') {
           s['status'] = 'Present';
-          s['time'] = '11:45 AM'; 
+          s['time'] = '11:45 AM';
           marked = true;
           break;
         }
@@ -416,7 +423,10 @@ class _StaffLiveAttendanceDefSect2PageState extends State<StaffLiveAttendanceDef
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _toggleNfc,
         backgroundColor: _isNfcScanning ? Colors.red : const Color(0xFF4A00E0),
-        icon: Icon(_isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc, color: Colors.white),
+        icon: Icon(
+          _isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc,
+          color: Colors.white,
+        ),
         label: Text(
           _isNfcScanning ? "Stop Scanning" : "Start NFC Scan",
           style: const TextStyle(color: Colors.white),

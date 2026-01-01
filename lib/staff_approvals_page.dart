@@ -37,21 +37,127 @@ class _StaffApprovalsPageState extends State<StaffApprovalsPage> {
     },
   ];
 
+  // --- LOGIC: Process Request (Approve/Reject) ---
   void _processRequest(int index, bool isApproved) {
     String name = _pendingRequests[index]['name'];
+    String studentId = _pendingRequests[index]['id'];
+    String fileName = _pendingRequests[index]['file'];
+
+    // 1. & 2. Send Notification to Student Portal (Simulated)
+    _simulateSendNotification(studentId, fileName, isApproved);
+
     setState(() {
       _pendingRequests.removeAt(index);
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          isApproved
-              ? "Request for $name Approved"
-              : "Request for $name Rejected",
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isApproved ? "Request Approved" : "Request Rejected",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text("Notification sent to student ($name)."),
+          ],
         ),
         backgroundColor: isApproved ? Colors.green : Colors.red,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // Helper to simulate API call to backend
+  void _simulateSendNotification(String id, String file, bool isApproved) {
+    String status = isApproved ? "APPROVED" : "REJECTED";
+    // TODO: Connect this to your Firebase/Database
+    // Example: FirebaseFirestore.instance.collection('notifications').add(...)
+    print("--- SERVER LOG ---");
+    print("To Student ID: $id");
+    print("Message: Your submission ($file) has been $status.");
+    print("------------------");
+  }
+
+  // --- LOGIC: View Attachment ---
+  // 3. Open the MC letter to view
+  void _viewAttachment(String fileName, String studentName) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          height: 500,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            children: [
+              // Dialog Header
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        fileName,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Dialog Content (Mock Viewer)
+              Expanded(
+                child: Container(
+                  color: Colors.grey.shade100,
+                  width: double.infinity,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.picture_as_pdf,
+                        size: 60,
+                        color: Colors.red.shade400,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "Preview of MC for\n$studentName",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.lato(
+                          fontSize: 16,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // NOTE: In a real app, you would use a PDF View package here
+                      Text(
+                        "(Document Viewer Placeholder)",
+                        style: GoogleFonts.lato(
+                          fontSize: 12,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -266,38 +372,47 @@ class _StaffApprovalsPageState extends State<StaffApprovalsPage> {
                   style: GoogleFonts.lato(color: Colors.black87),
                 ),
                 const SizedBox(height: 15),
-                // Attachment Mock
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.attach_file,
-                        size: 18,
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        data['file'],
-                        style: GoogleFonts.lato(
-                          fontSize: 12,
+
+                // Attachment (Made Clickable)
+                InkWell(
+                  onTap: () {
+                    _viewAttachment(data['file'], data['name']);
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.attach_file,
+                          size: 18,
                           color: Colors.blue,
                         ),
-                      ),
-                      const Spacer(),
-                      const Icon(
-                        Icons.visibility_outlined,
-                        size: 18,
-                        color: Colors.grey,
-                      ),
-                    ],
+                        const SizedBox(width: 10),
+                        Text(
+                          data['file'],
+                          style: GoogleFonts.lato(
+                            fontSize: 12,
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        const Spacer(),
+                        const Icon(
+                          Icons.visibility_outlined,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
                 // Action Buttons
                 Row(

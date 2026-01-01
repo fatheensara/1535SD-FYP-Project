@@ -14,11 +14,19 @@
       },
       "oauth_client": [
         {
-          "client_id": "766918308869-51k57f7082rl9bbbh5662nqph8h4ooom.apps.googleusercontent.com",
+          "client_id": "766918308869-68fn4vohgel82k0qc26ddavg1q5bn7av.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.sya.attendid",
-            "certificate_hash": "9c0f8ef0a983c9a75055711d8629429dc25be91a"
+            "certificate_hash": "b9ce28aa6bcdce003225d3790f01796aa5b7c434"
+          }
+        },
+        {
+          "client_id": "766918308869-nelpar5kfr0bab0o5giqlmchsst22per.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sya.attendid",
+            "certificate_hash": "fa0f5208c14899208ca32f8732820bbd09642acf"
           }
         },
         {
