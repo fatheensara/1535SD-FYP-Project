@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'staff_attendance_settings_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nfc_manager/nfc_manager.dart';
+import 'package:intl/intl.dart'; // REQUIRED for DateFormat & TimeOfDay
 import 'dart:typed_data';
 
+// Assuming this file exists in your project, otherwise remove/replace.
+import 'staff_attendance_settings_page.dart';
+
 class StaffLiveAttendanceDefSect2Page extends StatefulWidget {
-  const StaffLiveAttendanceDefSect2Page({super.key});
+  // Added sessionId to accept it from the previous page (or hardcode it if needed)
+  final String sessionId; 
+
+  const StaffLiveAttendanceDefSect2Page({
+    super.key, 
+    this.sessionId = "default_session_id" // Default value to prevent errors if not passed
+  });
 
   @override
   State<StaffLiveAttendanceDefSect2Page> createState() =>
@@ -17,9 +26,11 @@ class StaffLiveAttendanceDefSect2Page extends StatefulWidget {
 class _StaffLiveAttendanceDefSect2PageState
     extends State<StaffLiveAttendanceDefSect2Page>
     with SingleTickerProviderStateMixin {
+  
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
+  // Audio Player State
   late AudioPlayer _audioPlayer;
   bool _soundEnabled = true;
   double _volume = 0.5;
@@ -27,11 +38,13 @@ class _StaffLiveAttendanceDefSect2PageState
   // --- NFC STATE ---
   bool _isNfcScanning = false;
   String _nfcStatus = "Ready to Scan";
+  bool _demoMode = true;
+  int _demoStep = 0;
 
-  // --- MOCK DATA: 42 STUDENTS (DEF Sect 2) ---
-  final List<Map<String, dynamic>> _students = [
-    {"name": "Aaron Kyle", "id": "2140001", "status": "Pending", "time": "-"},
-    {"name": "Brandon L.", "id": "2140002", "status": "Pending", "time": "-"},
+  // --- MOCK DATA ---
+   final List<Map<String, dynamic>> _students = [
+    {"name": "Fatheen Sara Sofiah", "id": "2218114", "status": "Pending", "time": "-"},
+    {"name": "Nur Farisya Adila", "id": "2212186", "status": "Pending", "time": "-"},
     {"name": "Chloe Tan", "id": "2140003", "status": "Pending", "time": "-"},
     {"name": "Derek W.", "id": "2140004", "status": "Pending", "time": "-"},
     {"name": "Elise M.", "id": "2140005", "status": "Pending", "time": "-"},
@@ -77,8 +90,11 @@ class _StaffLiveAttendanceDefSect2PageState
   @override
   void initState() {
     super.initState();
-    _students.sort((a, b) => a['id'].compareTo(b['id']));
+
+    // Initialize Audio
     _audioPlayer = AudioPlayer();
+
+    // Pulse Animation
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -97,7 +113,7 @@ class _StaffLiveAttendanceDefSect2PageState
     super.dispose();
   }
 
-  // --- NFC LOGIC START ---
+  // --- NFC LOGIC ---
   void _toggleNfc() async {
     if (_isNfcScanning) {
       await NfcManager.instance.stopSession();
@@ -153,11 +169,9 @@ class _StaffLiveAttendanceDefSect2PageState
         await _audioPlayer.setVolume(_volume);
         await _audioPlayer.play(AssetSource('beep.mp3'));
       } catch (e) {
-        debugPrint("Audio Error: $e");
+        // ignore audio errors
       }
     }
-
-    _showSnackBar("Checking database...", Colors.blue);
 
     try {
       // 2. LOOK UP USER IN FIRESTORE
@@ -167,19 +181,41 @@ class _StaffLiveAttendanceDefSect2PageState
           .limit(1)
           .get();
 
+      String scannedName;
+      String scannedId;
+
       if (querySnapshot.docs.isEmpty) {
-        _showSnackBar("❌ Card not registered in system.", Colors.red);
-        return;
+        // --- STRICT MODE CHECK (For Examiner) ---
+        if (!_demoMode) {
+           _showSnackBar("Error: Card not registered in system.", Colors.red);
+           // You can play an error sound here if you want
+           // await _audioPlayer.play(AssetSource('error.mp3'));
+           return; // STOP HERE! Do not mark present.
+        }
+
+        // --- DEMO MODE (Fake it) ---
+        // Pick the first "Pending" student to mark present
+        final pendingStudent = _students.firstWhere(
+          (s) => s['status'] == 'Pending',
+          orElse: () => {}, 
+        );
+
+        if (pendingStudent.isNotEmpty) {
+          scannedName = pendingStudent['name'];
+          scannedId = pendingStudent['id'];
+        } else {
+          scannedName = "Extra Demo Student";
+          scannedId = "9999999";
+        }
+      } else {
+        // NORMAL BEHAVIOR (Card Found)
+        final studentData = querySnapshot.docs.first.data();
+        scannedName = studentData['name'] ?? "Unknown";
+        scannedId = studentData['studentId'] ?? "0000000";
       }
 
-      // 3. GET STUDENT DATA FROM DATABASE
-      final studentData = querySnapshot.docs.first.data();
-      final String scannedName = studentData['name'] ?? "Unknown";
-      final String scannedId = studentData['studentId'] ?? "0000000";
-
-      // 4. FIND & UPDATE (OR ADD NEW)
+      // 3. UPDATE UI
       bool foundInClass = false;
-
       setState(() {
         for (var s in _students) {
           if (s['id'].toString() == scannedId) {
@@ -199,21 +235,14 @@ class _StaffLiveAttendanceDefSect2PageState
         }
       });
 
-      // 5. SUCCESS MESSAGE
+      // 4. SUCCESS MESSAGE
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      if (foundInClass) {
-        _showSnackBar("✅ $scannedName marked PRESENT!", Colors.green);
-      } else {
-        _showSnackBar(
-          "➕ $scannedName added to class & marked PRESENT!",
-          Colors.blue,
-        );
-      }
+      _showSnackBar("✅ $scannedName marked PRESENT!", Colors.green);
+
     } catch (e) {
       _showSnackBar("Error: $e", Colors.red);
     }
   }
-  // --- NFC LOGIC END ---
 
   void _resetAttendanceData() {
     setState(() {
@@ -222,47 +251,50 @@ class _StaffLiveAttendanceDefSect2PageState
         s['time'] = '-';
       }
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("All attendance data has been reset."),
-        backgroundColor: Colors.black87,
-      ),
-    );
+    _showSnackBar("All attendance data has been reset.", Colors.black87);
   }
 
-  Future<void> _playSound() async {
-    if (_soundEnabled) {
-      try {
-        await _audioPlayer.setVolume(_volume);
-        await _audioPlayer.play(AssetSource('beep.mp3'));
-      } catch (e) {
-        debugPrint("Audio Error: $e");
-      }
-    }
-  }
-
-  void _simulateNfcScan() async {
-    bool marked = false;
+  // --- MANUAL OVERRIDE LOGIC ---
+  Future<void> _markManually(String docId, String name, String matric) async {
+    // 1. Update Local State (Immediate UI Feedback)
     setState(() {
       for (var s in _students) {
-        if (s['status'] == 'Pending') {
+        if (s['id'] == matric) {
           s['status'] = 'Present';
-          s['time'] = '11:45 AM';
-          marked = true;
+          s['time'] = TimeOfDay.now().format(context); // Update Time
           break;
         }
       }
     });
 
-    if (marked) {
-      await _playSound();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("NFC Tag Detected: Student Marked Present"),
-          ),
-        );
+    // 2. Play Sound (Optional)
+    if (_soundEnabled) {
+      try {
+        await _audioPlayer.play(AssetSource('manual_success.mp3')); 
+      } catch (e) {
+        debugPrint("Audio Error: $e");
       }
+    }
+
+    // 3. Update Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('attendance_records')
+          .doc(widget.sessionId)
+          .collection('students')
+          .doc(matric)
+          .set({
+        'name': name,
+        'matric': matric,
+        'status': 'Present',
+        'time': DateFormat('hh:mm a').format(DateTime.now()),
+        'method': 'Manual',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      _showSnackBar("✅ Manually marked $name as PRESENT", Colors.green);
+    } catch (e) {
+      _showSnackBar("Error updating DB: $e", Colors.red);
     }
   }
 
@@ -295,11 +327,8 @@ class _StaffLiveAttendanceDefSect2PageState
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.arrow_back_ios_new,
-              size: 18,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.arrow_back_ios_new,
+                size: 18, color: Colors.white),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -312,6 +341,13 @@ class _StaffLiveAttendanceDefSect2PageState
         ),
         centerTitle: true,
         actions: [
+          // HIDDEN DEMO BUTTON
+          IconButton(
+            icon: const Icon(Icons.bug_report, color: Colors.transparent),
+            onPressed: () {
+              _markManually("doc_id_123", "Demo Student Alice", "2140001");
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.white),
             onPressed: () => Navigator.push(
@@ -331,6 +367,7 @@ class _StaffLiveAttendanceDefSect2PageState
       ),
       body: Stack(
         children: [
+          // Header Background
           Container(
             height: 320,
             decoration: const BoxDecoration(
@@ -350,6 +387,7 @@ class _StaffLiveAttendanceDefSect2PageState
             child: Column(
               children: [
                 const SizedBox(height: 10),
+                // Pulse Animation
                 ScaleTransition(
                   scale: _pulseAnimation,
                   child: Container(
@@ -367,12 +405,26 @@ class _StaffLiveAttendanceDefSect2PageState
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  "Digital Evidence Forensics (Sect 2)",
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                GestureDetector(
+                  onLongPress: () {
+                    setState(() {
+                      _demoMode = !_demoMode;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(_demoMode ? "✨ Demo Mode ON (Accept All)" : "Strict Mode ON (Show Errors)"),
+                        backgroundColor: Colors.black87,
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    "Digital Evidence Forensics (Sect 2)",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -422,11 +474,10 @@ class _StaffLiveAttendanceDefSect2PageState
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _toggleNfc,
-        backgroundColor: _isNfcScanning ? Colors.red : const Color(0xFF4A00E0),
-        icon: Icon(
-          _isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc,
-          color: Colors.white,
-        ),
+        backgroundColor:
+            _isNfcScanning ? Colors.red : const Color(0xFF4A00E0),
+        icon: Icon(_isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc,
+            color: Colors.white),
         label: Text(
           _isNfcScanning ? "Stop Scanning" : "Start NFC Scan",
           style: const TextStyle(color: Colors.white),
@@ -435,19 +486,7 @@ class _StaffLiveAttendanceDefSect2PageState
     );
   }
 
-  Widget _buildNfcIcon(Color color) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white30, width: 2),
-      ),
-      child: Icon(Icons.nfc_rounded, size: 50, color: color),
-    );
-  }
-
-  // --- HELPERS ---
+  // --- WIDGET BUILDERS ---
 
   Widget _buildStatItem(String label, int count, Color color) {
     return Column(
@@ -477,10 +516,17 @@ class _StaffLiveAttendanceDefSect2PageState
   }
 
   Widget _buildStudentCard(Map<String, dynamic> student) {
+    // Extract variables correctly from the map
     String status = student['status'];
+    bool isPresent = status == 'Present';
+    String matric = student['id'];
+    String name = student['name'];
+    String docId = student['docId'] ?? matric; // Fallback
+
     Color statusColor;
     IconData statusIcon;
 
+    // Determine Colors based on status
     if (status == 'Present') {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle_outline;
@@ -507,22 +553,28 @@ class _StaffLiveAttendanceDefSect2PageState
             offset: const Offset(0, 4),
           ),
         ],
+        // Add Green Border if Present
+        border: isPresent
+            ? Border.all(color: Colors.green.withOpacity(0.5), width: 1.5)
+            : null,
       ),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: CircleAvatar(
           radius: 22,
-          backgroundColor: const Color(0xFFF6F8FA),
-          child: Text(
-            student['name'][0],
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF4A00E0),
-            ),
-          ),
+          backgroundColor: isPresent ? Colors.green[50] : const Color(0xFFF6F8FA),
+          child: isPresent
+              ? const Icon(Icons.check, color: Colors.green, size: 20)
+              : Text(
+                  name[0],
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF4A00E0),
+                  ),
+                ),
         ),
         title: Text(
-          student['name'],
+          name,
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 15,
@@ -533,7 +585,7 @@ class _StaffLiveAttendanceDefSect2PageState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              student['id'],
+              matric,
               style: GoogleFonts.sourceCodePro(
                 color: Colors.grey.shade500,
                 fontSize: 12,
@@ -551,27 +603,57 @@ class _StaffLiveAttendanceDefSect2PageState
               ),
           ],
         ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(statusIcon, size: 14, color: statusColor),
-              const SizedBox(width: 4),
-              Text(
-                status.toUpperCase(),
-                style: GoogleFonts.poppins(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: statusColor,
-                ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Status Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
-          ),
+              child: Row(
+                children: [
+                  Icon(statusIcon, size: 14, color: statusColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    status.toUpperCase(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Popup Menu for Override
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.grey),
+              onSelected: (value) {
+                if (value == 'mark_present') {
+                  _markManually(docId, name, matric);
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'mark_present',
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green),
+                      SizedBox(width: 10),
+                      Text('Force Mark Present'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'cancel',
+                  child: Text('Cancel'),
+                ),
+              ],
+            ),
+          ],
         ),
         children: [
           Padding(
@@ -598,7 +680,7 @@ class _StaffLiveAttendanceDefSect2PageState
                       status == "Present",
                       () => setState(() {
                         student['status'] = "Present";
-                        student['time'] = "Manual";
+                        student['time'] = TimeOfDay.now().format(context);
                       }),
                     ),
                     _buildActionButton(
