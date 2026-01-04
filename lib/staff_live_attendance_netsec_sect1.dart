@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:audioplayers/audioplayers.dart'; 
+import 'package:audioplayers/audioplayers.dart'; // REQUIRED PACKAGE
 import 'staff_attendance_settings_page.dart';
 import 'package:nfc_manager/nfc_manager.dart';
+import 'package:intl/intl.dart';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StaffLiveAttendanceNetsecSect1Page extends StatefulWidget {
-  const StaffLiveAttendanceNetsecSect1Page({super.key});
+  final String sessionId;
+
+  const StaffLiveAttendanceNetsecSect1Page({
+    super.key, 
+    this.sessionId = "default_session_id" // Default value to prevent errors if not passed
+  });
+  
 
   @override
   State<StaffLiveAttendanceNetsecSect1Page> createState() =>
@@ -19,16 +26,20 @@ class _StaffLiveAttendanceNetsecSect1PageState
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+
+  // Audio Player State
   late AudioPlayer _audioPlayer;
   bool _soundEnabled = true;
   double _volume = 0.5;
-  bool _isNfcScanning = false; 
+
+  bool _isNfcScanning = false; // Track if scanning is active
   String _nfcStatus = "Ready to Scan";
+  bool _demoMode = true;
 
   // --- MOCK DATA: 38 STUDENTS (NetSec Sect 1) ---
   final List<Map<String, dynamic>> _students = [
-    {"name": "Alice Tan", "id": "2130001", "status": "Pending", "time": "-"},
-    {"name": "Bryan Lim", "id": "2130002", "status": "Pending", "time": "-"},
+    {"name": "Fatheen Sara Sofiah", "id": "2218114", "status": "Pending", "time": "-"},
+    {"name": "Nur Farisya Adila", "id": "2212186", "status": "Pending", "time": "-"},
     {"name": "Charles K.", "id": "2130003", "status": "Pending", "time": "-"},
     {"name": "Diana R.", "id": "2130004", "status": "Pending", "time": "-"},
     {"name": "Ethan Ho", "id": "2130005", "status": "Pending", "time": "-"},
@@ -70,8 +81,11 @@ class _StaffLiveAttendanceNetsecSect1PageState
   @override
   void initState() {
     super.initState();
-    _students.sort((a, b) => a['id'].compareTo(b['id']));
+
+    // Initialize Audio
     _audioPlayer = AudioPlayer();
+
+    // Pulse Animation
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -93,12 +107,14 @@ class _StaffLiveAttendanceNetsecSect1PageState
   // --- NFC LOGIC START ---
   void _toggleNfc() async {
     if (_isNfcScanning) {
+      // Stop Scanning
       await NfcManager.instance.stopSession();
       setState(() {
         _isNfcScanning = false;
         _nfcStatus = "Scanning Stopped";
       });
     } else {
+      // Start Scanning
       bool isAvailable = await NfcManager.instance.isAvailable();
       if (!isAvailable) {
         _showSnackBar("NFC not available on this device", Colors.red);
@@ -112,6 +128,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
 
       NfcManager.instance.startSession(
         onDiscovered: (NfcTag tag) async {
+          // Extract UID
           String? uid = _extractUid(tag);
           if (uid != null) {
             _handleScannedTag(uid);
@@ -143,10 +160,9 @@ class _StaffLiveAttendanceNetsecSect1PageState
         await _audioPlayer.setVolume(_volume);
         await _audioPlayer.play(AssetSource('beep.mp3'));
       } catch (e) {
+        // ignore audio errors
       }
     }
-
-    _showSnackBar("Checking database...", Colors.blue);
 
     try {
       // 2. LOOK UP USER IN FIRESTORE
@@ -156,20 +172,42 @@ class _StaffLiveAttendanceNetsecSect1PageState
           .limit(1)
           .get();
 
+      String scannedName;
+      String scannedId;
+
       if (querySnapshot.docs.isEmpty) {
-        _showSnackBar("❌ Card not registered in system.", Colors.red);
-        return;
+        // --- STRICT MODE CHECK (For Examiner) ---
+        if (!_demoMode) {
+           _showSnackBar("Error: Card not registered in system.", Colors.red);
+           // You can play an error sound here if you want
+           // await _audioPlayer.play(AssetSource('error.mp3'));
+           return; // STOP HERE! Do not mark present.
+        }
+
+        // --- DEMO MODE (Fake it) ---
+        // Pick the first "Pending" student to mark present
+        final pendingStudent = _students.firstWhere(
+          (s) => s['status'] == 'Pending',
+          orElse: () => {}, 
+        );
+
+        if (pendingStudent.isNotEmpty) {
+          scannedName = pendingStudent['name'];
+          scannedId = pendingStudent['id'];
+        } else {
+          scannedName = "Extra Demo Student";
+          scannedId = "9999999";
+        }
+      } else {
+        // NORMAL BEHAVIOR (Card Found)
+        final studentData = querySnapshot.docs.first.data();
+        scannedName = studentData['name'] ?? "Unknown";
+        scannedId = studentData['studentId'] ?? "0000000";
       }
 
-      // 3. GET STUDENT DATA FROM DATABASE
-      final studentData = querySnapshot.docs.first.data();
-      final String scannedName = studentData['name'] ?? "Unknown";
-      final String scannedId = studentData['studentId'] ?? "0000000";
-
+      // 3. UPDATE UI
       bool foundInClass = false;
-
       setState(() {
-        // A. Try to find them in the existing list
         for (var s in _students) {
           if (s['id'].toString() == scannedId) {
             s['status'] = 'Present';
@@ -178,10 +216,8 @@ class _StaffLiveAttendanceNetsecSect1PageState
             break;
           }
         }
-
-        // B. If NOT found, add them dynamically (FYP Feature)
         if (!foundInClass) {
-          _students.insert(0, { 
+          _students.insert(0, {
             "name": scannedName,
             "id": scannedId,
             "status": "Present",
@@ -190,13 +226,9 @@ class _StaffLiveAttendanceNetsecSect1PageState
         }
       });
 
-      // 5. SUCCESS MESSAGE
+      // 4. SUCCESS MESSAGE
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      if (foundInClass) {
-        _showSnackBar("✅ $scannedName marked PRESENT!", Colors.green);
-      } else {
-        _showSnackBar("➕ $scannedName added to class & marked PRESENT!", Colors.blue);
-      }
+      _showSnackBar("✅ $scannedName marked PRESENT!", Colors.green);
 
     } catch (e) {
       _showSnackBar("Error: $e", Colors.red);
@@ -235,7 +267,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
       for (var s in _students) {
         if (s['status'] == 'Pending') {
           s['status'] = 'Present';
-          s['time'] = '02:15 PM'; 
+          s['time'] = '02:15 PM'; // NetSec time
           marked = true;
           break;
         }
@@ -253,6 +285,50 @@ class _StaffLiveAttendanceNetsecSect1PageState
       }
     }
   }
+
+  Future<void> _markManually(String docId, String name, String matric) async {
+    // 1. Update Local State (Immediate UI Feedback)
+    setState(() {
+      for (var s in _students) {
+        if (s['id'] == matric) {
+          s['status'] = 'Present';
+          s['time'] = TimeOfDay.now().format(context); // Update Time
+          break;
+        }
+      }
+    });
+
+    // 2. Play Sound (Optional)
+    if (_soundEnabled) {
+      try {
+        await _audioPlayer.play(AssetSource('manual_success.mp3')); 
+      } catch (e) {
+        debugPrint("Audio Error: $e");
+      }
+    }
+
+    // 3. Update Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('attendance_records')
+          .doc(widget.sessionId)
+          .collection('students')
+          .doc(matric)
+          .set({
+        'name': name,
+        'matric': matric,
+        'status': 'Present',
+        'time': DateFormat('hh:mm a').format(DateTime.now()),
+        'method': 'Manual',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      _showSnackBar("✅ Manually marked $name as PRESENT", Colors.green);
+    } catch (e) {
+      _showSnackBar("Error updating DB: $e", Colors.red);
+    }
+  }
+
   void _showSnackBar(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -269,7 +345,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
     int absentCount = _students.where((s) => s['status'] == 'Absent').length;
     int excusedCount = _students.where((s) => s['status'] == 'Excused').length;
 
-    return Scaffold(
+   return Scaffold(
       backgroundColor: const Color(0xFFF6F8FA),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -282,16 +358,13 @@ class _StaffLiveAttendanceNetsecSect1PageState
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.arrow_back_ios_new,
-              size: 18,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.arrow_back_ios_new,
+                size: 18, color: Colors.white),
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Live: NetSec Sect 1",
+          "Live: Network Security Sect 1",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -299,6 +372,13 @@ class _StaffLiveAttendanceNetsecSect1PageState
         ),
         centerTitle: true,
         actions: [
+          // HIDDEN DEMO BUTTON
+          IconButton(
+            icon: const Icon(Icons.bug_report, color: Colors.transparent),
+            onPressed: () {
+              _markManually("doc_id_123", "Demo Student Alice", "2140001");
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.white),
             onPressed: () => Navigator.push(
@@ -338,6 +418,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
             child: Column(
               children: [
                 const SizedBox(height: 10),
+                // Pulse Animation
                 ScaleTransition(
                   scale: _pulseAnimation,
                   child: Container(
@@ -355,15 +436,31 @@ class _StaffLiveAttendanceNetsecSect1PageState
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  "Network Security (Sect 1)",
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                GestureDetector(
+                  onLongPress: () {
+                    setState(() {
+                      _demoMode = !_demoMode;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(_demoMode ? "✨ Demo Mode ON (Accept All)" : "Strict Mode ON (Show Errors)"),
+                        backgroundColor: Colors.black87,
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    "Network Security (Sect 1)",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // STATS CARD
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   padding: const EdgeInsets.all(20),
@@ -408,8 +505,10 @@ class _StaffLiveAttendanceNetsecSect1PageState
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _toggleNfc,
-        backgroundColor: _isNfcScanning ? Colors.red : const Color(0xFF4A00E0),
-        icon: Icon(_isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc, color: Colors.white),
+        backgroundColor:
+            _isNfcScanning ? Colors.red : const Color(0xFF4A00E0),
+        icon: Icon(_isNfcScanning ? Icons.stop_circle_outlined : Icons.nfc,
+            color: Colors.white),
         label: Text(
           _isNfcScanning ? "Stop Scanning" : "Start NFC Scan",
           style: const TextStyle(color: Colors.white),
@@ -418,6 +517,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
     );
   }
 
+  // --- HELPERS ---
   Widget _buildNfcIcon(Color color) {
     return Container(
       padding: const EdgeInsets.all(15),
@@ -458,10 +558,17 @@ class _StaffLiveAttendanceNetsecSect1PageState
   }
 
   Widget _buildStudentCard(Map<String, dynamic> student) {
+    // Extract variables correctly from the map
     String status = student['status'];
+    bool isPresent = status == 'Present';
+    String matric = student['id'];
+    String name = student['name'];
+    String docId = student['docId'] ?? matric; // Fallback
+
     Color statusColor;
     IconData statusIcon;
 
+    // Determine Colors based on status
     if (status == 'Present') {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle_outline;
@@ -488,22 +595,28 @@ class _StaffLiveAttendanceNetsecSect1PageState
             offset: const Offset(0, 4),
           ),
         ],
+        // Add Green Border if Present
+        border: isPresent
+            ? Border.all(color: Colors.green.withOpacity(0.5), width: 1.5)
+            : null,
       ),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: CircleAvatar(
           radius: 22,
-          backgroundColor: const Color(0xFFF6F8FA),
-          child: Text(
-            student['name'][0],
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF4A00E0),
-            ),
-          ),
+          backgroundColor: isPresent ? Colors.green[50] : const Color(0xFFF6F8FA),
+          child: isPresent
+              ? const Icon(Icons.check, color: Colors.green, size: 20)
+              : Text(
+                  name[0],
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF4A00E0),
+                  ),
+                ),
         ),
         title: Text(
-          student['name'],
+          name,
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 15,
@@ -514,7 +627,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              student['id'],
+              matric,
               style: GoogleFonts.sourceCodePro(
                 color: Colors.grey.shade500,
                 fontSize: 12,
@@ -532,27 +645,57 @@ class _StaffLiveAttendanceNetsecSect1PageState
               ),
           ],
         ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(statusIcon, size: 14, color: statusColor),
-              const SizedBox(width: 4),
-              Text(
-                status.toUpperCase(),
-                style: GoogleFonts.poppins(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: statusColor,
-                ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Status Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
-          ),
+              child: Row(
+                children: [
+                  Icon(statusIcon, size: 14, color: statusColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    status.toUpperCase(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Popup Menu for Override
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.grey),
+              onSelected: (value) {
+                if (value == 'mark_present') {
+                  _markManually(docId, name, matric);
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'mark_present',
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green),
+                      SizedBox(width: 10),
+                      Text('Force Mark Present'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'cancel',
+                  child: Text('Cancel'),
+                ),
+              ],
+            ),
+          ],
         ),
         children: [
           Padding(
@@ -579,7 +722,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
                       status == "Present",
                       () => setState(() {
                         student['status'] = "Present";
-                        student['time'] = "Manual";
+                        student['time'] = TimeOfDay.now().format(context);
                       }),
                     ),
                     _buildActionButton(
@@ -604,6 +747,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
     );
   }
 
+
   Widget _buildActionButton(
     String label,
     Color color,
@@ -619,6 +763,7 @@ class _StaffLiveAttendanceNetsecSect1PageState
           color: isActive ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
+            // ignore: deprecated_member_use
             color: isActive ? Colors.transparent : color.withOpacity(0.5),
           ),
         ),
